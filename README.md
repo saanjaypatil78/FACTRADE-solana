@@ -260,12 +260,52 @@ npx tsc --noEmit
 
 ## Deployment
 
+### Frontend Deployment
+
 This application can be deployed on:
-- Vercel (recommended for Next.js)
-- Netlify
+- **Vercel** (recommended for Next.js)
+- **Netlify**
 - Any Node.js hosting platform
 
-For Solana program deployment, refer to [Solana Program Deployment Guide](https://docs.solana.com/cli/deploy-a-program).
+### Blockchain Deployment
+
+Complete deployment scripts and guides are provided for deploying to Solana blockchain.
+
+#### Quick Start
+
+```bash
+# Automated deployment (devnet)
+./scripts/deploy-all.sh devnet
+
+# Or step-by-step:
+npm run deploy:token          # Deploy FACT token
+npm run deploy:programs       # Deploy Solana programs
+npm run init:programs         # Initialize programs
+npm run distribute:tokens     # Distribute tokens
+```
+
+#### Documentation
+
+- 📖 **[Complete Deployment Guide](COMPLETE_DEPLOYMENT_GUIDE.md)** - Comprehensive step-by-step instructions
+- ✅ **[Deployment Checklist](DEPLOYMENT_CHECKLIST.md)** - Quick reference checklist
+- 🛠️ **[Scripts README](scripts/README.md)** - Deployment scripts documentation
+
+#### Deployment Scripts
+
+Located in `scripts/`:
+- `deploy-token.ts` - Deploy FACT SPL token
+- `distribute-tokens.ts` - Distribute tokens according to tokenomics
+- `initialize-programs.ts` - Initialize Solana programs
+- `deploy-all.sh` - Master deployment script
+
+#### Requirements
+
+- Solana CLI v1.18+
+- Anchor CLI v0.29.0
+- Node.js 18+
+- Wallet with sufficient SOL (2+ for devnet, 5+ for mainnet)
+
+For detailed instructions, see [COMPLETE_DEPLOYMENT_GUIDE.md](COMPLETE_DEPLOYMENT_GUIDE.md).
 
 ## Security Considerations
 
@@ -302,9 +342,11 @@ For issues and questions:
 - [x] Auto-compounding functionality
 - [x] Governance with proposal voting
 - [x] Responsive UI with dark mode
+- [x] Complete deployment scripts and automation
+- [x] Comprehensive deployment documentation
 
 ### In Progress 🚧
-- [ ] Deploy Solana programs to devnet
+- [ ] Deploy Solana programs to devnet/mainnet
 - [ ] Integrate frontend with on-chain programs
 - [ ] Add transaction history tracking
 - [ ] Implement real-time APY calculations
