@@ -1,0 +1,44 @@
+{
+  "name": "FACTRADE Token",
+  "symbol": "FACT",
+  "decimals": 9,
+  "totalSupply": 1000000000,
+  "description": "FACTRADE - Decentralized Trading Platform Token",
+  "distribution": {
+    "publicSale": {
+      "percentage": 40,
+      "amount": 400000000,
+      "description": "Tokens available for public sale"
+    },
+    "team": {
+      "percentage": 20,
+      "amount": 200000000,
+      "description": "Team allocation with vesting",
+      "vestingPeriod": "24 months",
+      "cliff": "6 months"
+    },
+    "liquidity": {
+      "percentage": 15,
+      "amount": 150000000,
+      "description": "Liquidity provision for DEX"
+    },
+    "ecosystem": {
+      "percentage": 15,
+      "amount": 150000000,
+      "description": "Ecosystem development and partnerships"
+    },
+    "reserve": {
+      "percentage": 10,
+      "amount": 100000000,
+      "description": "Reserve fund for future development"
+    }
+  },
+  "features": {
+    "mintable": false,
+    "burnable": true,
+    "pausable": false,
+    "transferFee": 0
+  },
+  "network": "mainnet-beta",
+  "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+}
