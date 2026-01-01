@@ -1,7 +1,23 @@
+'use client';
+
+import { useState } from 'react';
 import { WalletConnectButton } from "./components/WalletConnectButton";
 import { TokenInfo } from "./components/TokenInfo";
+import { StakingInterface } from "./components/StakingInterface";
+import { RewardsInterface } from "./components/RewardsInterface";
+import { GovernanceInterface } from "./components/GovernanceInterface";
+
+type Tab = 'overview' | 'stake' | 'rewards' | 'governance';
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
+
+  const tabs = [
+    { id: 'overview' as Tab, name: 'Overview', icon: '📊' },
+    { id: 'stake' as Tab, name: 'Stake', icon: '🔒' },
+    { id: 'rewards' as Tab, name: 'Rewards', icon: '💰' },
+    { id: 'governance' as Tab, name: 'Governance', icon: '🗳️' },
+  ];
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-purple-950">
       {/* Header */}
@@ -30,15 +46,41 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            Welcome to FACTRADE
+            Earn Passive Income with FACTRADE
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-            A decentralized trading platform built on Solana with transparent tokenomics
-            and community-driven governance.
+            Stake your FACT tokens, earn dynamic APY rewards, and participate in governance.
+            Your complete DeFi platform on Solana.
           </p>
         </div>
 
-        <TokenInfo />
+        {/* Navigation Tabs */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-2 justify-center">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+                    : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700'
+                }`}
+              >
+                <span className="text-xl">{tab.icon}</span>
+                <span>{tab.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="mt-8">
+          {activeTab === 'overview' && <TokenInfo />}
+          {activeTab === 'stake' && <StakingInterface />}
+          {activeTab === 'rewards' && <RewardsInterface />}
+          {activeTab === 'governance' && <GovernanceInterface />}
+        </div>
       </main>
 
       {/* Footer */}
