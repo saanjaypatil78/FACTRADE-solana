@@ -7,7 +7,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy:token": "npx ts-node --project tsconfig.scripts.json scripts/deploy-token.ts",
+    "deploy:programs": "cd solana-programs && anchor deploy",
+    "init:programs": "npx ts-node --project tsconfig.scripts.json scripts/initialize-programs.ts",
+    "distribute:tokens": "npx ts-node --project tsconfig.scripts.json scripts/distribute-tokens.ts"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.14",
@@ -28,6 +32,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.7",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "5.9.3"
   }
 }

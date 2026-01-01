@@ -40,3 +40,13 @@ target/
 deploy/
 .anchor/
 test-ledger/
+
+# Deployment artifacts (optional - uncomment to exclude from git)
+# deployments/
+# distribution-wallets.json
+
+# Wallet files (NEVER commit these!)
+*.json.key
+*-keypair.json
+id.json
+
