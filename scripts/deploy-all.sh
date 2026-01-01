@@ -90,7 +90,7 @@ if [[ "$NETWORK" == "mainnet-beta" ]]; then
     REQUIRED_BALANCE="5.0"
 fi
 
-if (( $(echo "$BALANCE < $REQUIRED_BALANCE" | bc -l) )); then
+if (( $(awk "BEGIN {print ($BALANCE < $REQUIRED_BALANCE)}") )); then
     echo -e "${RED}❌ Insufficient balance. Need at least $REQUIRED_BALANCE SOL${NC}"
     if [[ "$NETWORK" == "devnet" ]]; then
         echo -e "${YELLOW}   Run: solana airdrop 2${NC}"
