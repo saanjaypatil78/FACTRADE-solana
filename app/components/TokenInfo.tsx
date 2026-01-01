@@ -2,8 +2,9 @@
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, AccountInfo } from '@solana/web3.js';
 import tokenomics from '../../programs/factrade-token/tokenomics.json';
+import { useAccountSync, getSyncInterval } from '../utils/blockchain-sync';
 
 // Utility function to convert camelCase to Title Case
 function camelToTitleCase(str: string): string {
@@ -17,11 +18,35 @@ export function TokenInfo() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const [balance, setBalance] = useState<number | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
+  // Real-time balance sync with auto-update every second
+  useAccountSync(
+    connection,
+    publicKey,
+    (accountInfo: AccountInfo<Buffer> | null) => {
+      if (accountInfo) {
+        const newBalance = accountInfo.lamports / LAMPORTS_PER_SOL;
+        setBalance(newBalance);
+        setLastUpdate(new Date());
+        console.log(`✅ Balance synced: ${newBalance.toFixed(4)} SOL`);
+      }
+    },
+    {
+      interval: getSyncInterval(), // Auto-sync every 1 second
+      enabled: !!publicKey,
+      onError: (error) => {
+        console.error('Balance sync error:', error);
+      },
+    }
+  );
+
+  // Initial balance fetch
   useEffect(() => {
-    if (publicKey) {
+    if (publicKey && connection) {
       connection.getBalance(publicKey).then((bal) => {
         setBalance(bal / LAMPORTS_PER_SOL);
+        setLastUpdate(new Date());
       });
     }
   }, [publicKey, connection]);
@@ -41,11 +66,27 @@ export function TokenInfo() {
         </p>
 
         {publicKey && (
-          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-4 transition-all duration-300 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:scale-105 cursor-pointer">
+          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 mb-4 transition-all duration-300 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:scale-105 cursor-pointer relative">
+            {/* Real-time sync indicator */}
+            <div className="absolute top-2 right-2 flex items-center gap-2">
+              <div className="relative">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
+              </div>
+              <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                Live Sync
+              </span>
+            </div>
+            
             <p className="text-sm text-zinc-600 dark:text-zinc-400">Wallet Balance</p>
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 transition-all duration-300 hover:text-purple-700">
               {balance !== null ? `${balance.toFixed(4)} SOL` : 'Loading...'}
             </p>
+            {lastUpdate && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
+                Last updated: {lastUpdate.toLocaleTimeString()}
+              </p>
+            )}
           </div>
         )}
       </div>
