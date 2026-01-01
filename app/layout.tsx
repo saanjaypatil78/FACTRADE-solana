@@ -4,25 +4,14 @@ import { SolanaProvider } from "./components/SolanaProvider";
 
 export const metadata: Metadata = {
   title: "FACTRADE - Solana DeFi Platform",
-  description: "Earn passive income through staking, rewards, and governance on Solana blockchain",
-  icons: {
-    icon: [
-      {
-        url: '/favicon.ico',
-        sizes: 'any',
-      },
-    ],
-    apple: [
-      {
-        url: '/apple-touch-icon.png',
-        sizes: '180x180',
-        type: 'image/png',
-      },
-    ],
-  },
+  description: "Earn passive income through staking, rewards, and governance on Solana blockchain with FACTRADE token",
+  metadataBase: new URL('https://factrade-solana.vercel.app'),
+  applicationName: 'FACTRADE',
+  authors: [{ name: 'FACTRADE Team' }],
+  keywords: ['Solana', 'DeFi', 'FACTRADE', 'FACT token', 'Staking', 'Rewards', 'Governance', 'Passive Income', 'Cryptocurrency'],
   openGraph: {
     title: 'FACTRADE - Solana DeFi Platform',
-    description: 'Earn passive income through staking, rewards, and governance on Solana blockchain',
+    description: 'Earn passive income through staking, rewards, and governance on Solana blockchain with FACTRADE token',
     siteName: 'FACTRADE',
     locale: 'en_US',
     type: 'website',
@@ -30,7 +19,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'FACTRADE - Solana DeFi Platform',
-    description: 'Earn passive income through staking, rewards, and governance on Solana blockchain',
+    description: 'Earn passive income through staking, rewards, and governance on Solana blockchain with FACTRADE token',
   },
 };
 
