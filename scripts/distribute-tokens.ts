@@ -13,6 +13,7 @@ import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { mintTokensToDistribution, getTokenDistribution, tokenomics } from '../programs/factrade-token/token-config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { homedir } from 'os';
 
 interface DistributionWallet {
   category: string;
@@ -24,7 +25,7 @@ interface DistributionWallet {
  * Load wallet from file
  */
 function loadWallet(walletPath?: string): Keypair {
-  const defaultPath = path.join(process.env.HOME || '', '.config', 'solana', 'id.json');
+  const defaultPath = path.join(homedir(), '.config', 'solana', 'id.json');
   const filePath = walletPath || process.env.WALLET_PATH || defaultPath;
   
   if (!fs.existsSync(filePath)) {

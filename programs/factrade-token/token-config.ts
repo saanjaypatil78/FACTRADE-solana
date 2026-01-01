@@ -14,6 +14,7 @@ import {
   getMinimumBalanceForRentExemptMint,
   MINT_SIZE,
 } from '@solana/spl-token';
+import { homedir } from 'os';
 
 import tokenomics from './tokenomics.json';
 

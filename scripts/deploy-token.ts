@@ -20,6 +20,7 @@ import {
 } from '../programs/factrade-token/token-config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { homedir } from 'os';
 
 interface DeploymentConfig {
   network: string;
@@ -59,7 +60,7 @@ interface DeploymentResult {
  */
 function loadWallet(): Keypair {
   const walletPath = process.env.WALLET_PATH || 
-                     path.join(process.env.HOME || '', '.config', 'solana', 'id.json');
+                     path.join(homedir(), '.config', 'solana', 'id.json');
   
   if (!fs.existsSync(walletPath)) {
     throw new Error(
@@ -92,7 +93,7 @@ function getDeploymentConfig(): DeploymentConfig {
   }
 
   const walletPath = process.env.WALLET_PATH || 
-                     path.join(process.env.HOME || '', '.config', 'solana', 'id.json');
+                     path.join(homedir(), '.config', 'solana', 'id.json');
 
   return { network, rpcUrl, walletPath };
 }

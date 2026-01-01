@@ -15,6 +15,7 @@
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { homedir } from 'os';
 
 interface ProgramConfig {
   programId: string;
@@ -42,7 +43,7 @@ interface InitializationResult {
  */
 function loadWallet(): Keypair {
   const walletPath = process.env.WALLET_PATH || 
-                     path.join(process.env.HOME || '', '.config', 'solana', 'id.json');
+                     path.join(homedir(), '.config', 'solana', 'id.json');
   
   if (!fs.existsSync(walletPath)) {
     throw new Error(`Wallet file not found at ${walletPath}`);

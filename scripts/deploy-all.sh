@@ -82,7 +82,16 @@ echo ""
 
 # Check balance
 echo -e "${BLUE}💰 Checking wallet balance...${NC}"
-BALANCE=$(solana balance | awk '{print $1}')
+BALANCE=$(solana balance 2>/dev/null | awk '{print $1}')
+
+if [[ -z "$BALANCE" || "$BALANCE" == "0" ]]; then
+    echo -e "${RED}❌ Unable to get balance or balance is 0${NC}"
+    if [[ "$NETWORK" == "devnet" ]]; then
+        echo -e "${YELLOW}   Run: solana airdrop 2${NC}"
+    fi
+    exit 1
+fi
+
 echo -e "   Balance: $BALANCE SOL"
 
 REQUIRED_BALANCE="2.0"
@@ -90,7 +99,8 @@ if [[ "$NETWORK" == "mainnet-beta" ]]; then
     REQUIRED_BALANCE="5.0"
 fi
 
-if (( $(awk "BEGIN {print ($BALANCE < $REQUIRED_BALANCE)}") )); then
+# Use awk for portable floating point comparison
+if [[ $(awk "BEGIN {print ($BALANCE < $REQUIRED_BALANCE)}") == "1" ]]; then
     echo -e "${RED}❌ Insufficient balance. Need at least $REQUIRED_BALANCE SOL${NC}"
     if [[ "$NETWORK" == "devnet" ]]; then
         echo -e "${YELLOW}   Run: solana airdrop 2${NC}"
