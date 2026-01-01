@@ -1,6 +1,7 @@
 {
-  "name": "nextjs",
-  "version": "0.1.0",
+  "name": "factrade-solana",
+  "version": "1.0.0",
+  "description": "FACTRADE - Decentralized Trading Platform on Solana",
   "private": true,
   "scripts": {
     "dev": "next dev",
