@@ -125,7 +125,7 @@ export async function mintTokensToDistribution(
       mint,
       associatedTokenAddress,
       mintAuthority.publicKey,
-      amount * Math.pow(10, tokenomics.decimals)
+      amount * (10 ** tokenomics.decimals)
     )
   );
 

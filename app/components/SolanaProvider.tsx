@@ -18,8 +18,8 @@ import { useMemo } from 'react';
 import '@solana/wallet-adapter-react-ui/styles.css';
 
 export function SolanaProvider({ children }: { children: React.ReactNode }) {
-  // Configure network (mainnet-beta, testnet, or devnet)
-  const network = WalletAdapterNetwork.Devnet;
+  // Configure network from environment or default to devnet
+  const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK as WalletAdapterNetwork) || WalletAdapterNetwork.Devnet;
   
   // Use the RPC endpoint
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);

@@ -5,6 +5,14 @@ import { useEffect, useState } from 'react';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import tokenomics from '../../programs/factrade-token/tokenomics.json';
 
+// Utility function to convert camelCase to Title Case
+function camelToTitleCase(str: string): string {
+  return str
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
 export function TokenInfo() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
@@ -71,7 +79,7 @@ export function TokenInfo() {
             <div key={key} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
               <div className="flex-1">
                 <p className="font-semibold text-black dark:text-white capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                  {camelToTitleCase(key)}
                 </p>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
                   {value.description}

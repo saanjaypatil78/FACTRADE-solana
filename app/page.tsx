@@ -45,7 +45,7 @@ export default function Home() {
       <footer className="border-t border-zinc-200 dark:border-zinc-800 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-            <p>© 2026 FACTRADE. Built on Solana.</p>
+            <p>© {new Date().getFullYear()} FACTRADE. Built on Solana.</p>
             <p className="mt-2">
               Connect your wallet to view token details and interact with the platform.
             </p>
