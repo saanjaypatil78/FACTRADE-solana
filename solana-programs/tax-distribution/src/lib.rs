@@ -149,8 +149,12 @@ pub mod tax_distribution {
 
         // Update statistics
         let tax_config = &mut ctx.accounts.tax_config;
-        tax_config.total_taxes_collected = tax_config.total_taxes_collected.checked_add(tax_amount).unwrap();
-        tax_config.total_burned = tax_config.total_burned.checked_add(burn_amount).unwrap();
+        tax_config.total_taxes_collected = tax_config.total_taxes_collected
+            .checked_add(tax_amount)
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
+        tax_config.total_burned = tax_config.total_burned
+            .checked_add(burn_amount)
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
 
         emit!(TaxProcessed {
             user: ctx.accounts.user.key(),
