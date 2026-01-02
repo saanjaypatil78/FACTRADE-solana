@@ -79,7 +79,9 @@ pub mod referral_rewards {
         referral_account.bump = ctx.bumps.referral_account;
 
         let referral_config = &mut ctx.accounts.referral_config;
-        referral_config.total_referrals = referral_config.total_referrals.checked_add(1).unwrap();
+        referral_config.total_referrals = referral_config.total_referrals
+            .checked_add(1)
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
 
         emit!(ReferralRegistered {
             user: ctx.accounts.user.key(),
@@ -103,9 +105,9 @@ pub mod referral_rewards {
         // Calculate total referral reward pool from trading volume
         let total_reward_pool = (trading_volume as u128)
             .checked_mul(referral_config.tax_allocation_percentage as u128)
-            .unwrap()
+            .ok_or(ErrorCode::ArithmeticOverflow)?
             .checked_div(100)
-            .unwrap() as u64;
+            .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
 
         require!(total_reward_pool > 0, ErrorCode::RewardPoolTooSmall);
 
@@ -115,9 +117,9 @@ pub mod referral_rewards {
         if referral_account.referrer != Pubkey::default() {
             let level1_amount = (total_reward_pool as u128)
                 .checked_mul(referral_config.level1_share as u128)
-                .unwrap()
+                .ok_or(ErrorCode::ArithmeticOverflow)?
                 .checked_div(100)
-                .unwrap() as u64;
+                .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
             if level1_amount > 0 {
                 rewards.push((referral_account.referrer, level1_amount, 1u8));
             }
@@ -127,9 +129,9 @@ pub mod referral_rewards {
         if referral_account.level_2 != Pubkey::default() {
             let level2_amount = (total_reward_pool as u128)
                 .checked_mul(referral_config.level2_share as u128)
-                .unwrap()
+                .ok_or(ErrorCode::ArithmeticOverflow)?
                 .checked_div(100)
-                .unwrap() as u64;
+                .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
             if level2_amount > 0 {
                 rewards.push((referral_account.level_2, level2_amount, 2u8));
             }
@@ -139,9 +141,9 @@ pub mod referral_rewards {
         if referral_account.level_3 != Pubkey::default() {
             let level3_amount = (total_reward_pool as u128)
                 .checked_mul(referral_config.level3_share as u128)
-                .unwrap()
+                .ok_or(ErrorCode::ArithmeticOverflow)?
                 .checked_div(100)
-                .unwrap() as u64;
+                .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
             if level3_amount > 0 {
                 rewards.push((referral_account.level_3, level3_amount, 3u8));
             }
@@ -151,9 +153,9 @@ pub mod referral_rewards {
         if referral_account.level_4 != Pubkey::default() {
             let level4_amount = (total_reward_pool as u128)
                 .checked_mul(referral_config.level4_share as u128)
-                .unwrap()
+                .ok_or(ErrorCode::ArithmeticOverflow)?
                 .checked_div(100)
-                .unwrap() as u64;
+                .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
             if level4_amount > 0 {
                 rewards.push((referral_account.level_4, level4_amount, 4u8));
             }
@@ -163,9 +165,9 @@ pub mod referral_rewards {
         if referral_account.level_5 != Pubkey::default() {
             let level5_amount = (total_reward_pool as u128)
                 .checked_mul(referral_config.level5_share as u128)
-                .unwrap()
+                .ok_or(ErrorCode::ArithmeticOverflow)?
                 .checked_div(100)
-                .unwrap() as u64;
+                .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
             if level5_amount > 0 {
                 rewards.push((referral_account.level_5, level5_amount, 5u8));
             }
@@ -179,10 +181,13 @@ pub mod referral_rewards {
         ];
         let signer = &[&seeds[..]];
 
+        // Note: Actual token transfers would require passing recipient token accounts
+        // for each level. To keep the instruction simple, this function only
+        // calculates and emits reward events. A separate batch transfer instruction
+        // or off-chain service should be used to actually distribute tokens based on
+        // the emitted events. This is a common pattern in Solana programs to avoid
+        // account limit issues when dealing with many recipients.
         for (recipient, amount, level) in rewards.iter() {
-            // Transfer rewards to recipient
-            // Note: In production, you'd need to get the recipient's token account
-            // This is a simplified version
             emit!(ReferralRewardDistributed {
                 recipient: *recipient,
                 amount: *amount,
@@ -194,10 +199,26 @@ pub mod referral_rewards {
 
         // Update statistics
         let referral_account = &mut ctx.accounts.referral_account;
-        referral_account.total_volume = referral_account.total_volume.checked_add(trading_volume).unwrap();
+        referral_account.total_volume = referral_account.total_volume
+            .checked_add(trading_volume)
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
 
         let referral_config = &mut ctx.accounts.referral_config;
-        referral_config.total_rewards_distributed = referral_config.total_rewards_distributed.checked_add(total_reward_pool).unwrap();
+        referral_config.total_rewards_distributed = referral_config.total_rewards_distributed
+            .checked_add(total_reward_pool)
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
+
+        Ok(())
+    }
+
+    pub fn initialize_referral_stats(
+        ctx: Context<InitializeReferralStats>,
+    ) -> Result<()> {
+        let referral_stats = &mut ctx.accounts.referral_stats;
+        referral_stats.user = ctx.accounts.user.key();
+        referral_stats.pending_rewards = 0;
+        referral_stats.total_claimed = 0;
+        referral_stats.bump = ctx.bumps.referral_stats;
 
         Ok(())
     }
@@ -227,7 +248,9 @@ pub mod referral_rewards {
 
         token::transfer(cpi_ctx, referral_stats.pending_rewards)?;
 
-        referral_stats.total_claimed = referral_stats.total_claimed.checked_add(referral_stats.pending_rewards).unwrap();
+        referral_stats.total_claimed = referral_stats.total_claimed
+            .checked_add(referral_stats.pending_rewards)
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
         let claimed_amount = referral_stats.pending_rewards;
         referral_stats.pending_rewards = 0;
 
@@ -331,6 +354,23 @@ pub struct DistributeReferralRewards<'info> {
     pub reward_pool: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct InitializeReferralStats<'info> {
+    #[account(
+        init,
+        payer = user,
+        space = 8 + ReferralStats::INIT_SPACE,
+        seeds = [b"referral_stats", user.key().as_ref()],
+        bump
+    )]
+    pub referral_stats: Account<'info, ReferralStats>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -464,4 +504,6 @@ pub enum ErrorCode {
     NoRewardsToClaim,
     #[msg("Invalid percentage value")]
     InvalidPercentage,
+    #[msg("Arithmetic overflow in calculation")]
+    ArithmeticOverflow,
 }

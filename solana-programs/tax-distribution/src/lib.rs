@@ -66,38 +66,38 @@ pub mod tax_distribution {
 
         let tax_amount = (amount as u128)
             .checked_mul(tax_bps as u128)
-            .unwrap()
+            .ok_or(ErrorCode::ArithmeticOverflow)?
             .checked_div(10000)
-            .unwrap() as u64;
+            .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
 
         require!(tax_amount > 0, ErrorCode::TaxAmountTooSmall);
 
         // Calculate distribution amounts
         let marketing_amount = (tax_amount as u128)
             .checked_mul(tax_config.marketing_share as u128)
-            .unwrap()
+            .ok_or(ErrorCode::ArithmeticOverflow)?
             .checked_div(100)
-            .unwrap() as u64;
+            .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
             
         let treasury_amount = (tax_amount as u128)
             .checked_mul(tax_config.treasury_share as u128)
-            .unwrap()
+            .ok_or(ErrorCode::ArithmeticOverflow)?
             .checked_div(100)
-            .unwrap() as u64;
+            .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
             
         let burn_amount = (tax_amount as u128)
             .checked_mul(tax_config.burn_share as u128)
-            .unwrap()
+            .ok_or(ErrorCode::ArithmeticOverflow)?
             .checked_div(100)
-            .unwrap() as u64;
+            .ok_or(ErrorCode::ArithmeticOverflow)? as u64;
             
         let holder_rewards_amount = tax_amount
             .checked_sub(marketing_amount)
-            .unwrap()
+            .ok_or(ErrorCode::ArithmeticOverflow)?
             .checked_sub(treasury_amount)
-            .unwrap()
+            .ok_or(ErrorCode::ArithmeticOverflow)?
             .checked_sub(burn_amount)
-            .unwrap();
+            .ok_or(ErrorCode::ArithmeticOverflow)?;
 
         // Transfer to marketing wallet
         if marketing_amount > 0 {
@@ -211,13 +211,16 @@ pub struct InitializeTaxConfig<'info> {
 
     pub token_mint: Account<'info, Mint>,
 
-    /// CHECK: Marketing wallet address
+    /// CHECK: Marketing wallet address - validated to match during ProcessTax
+    #[account(constraint = marketing_wallet.key() != Pubkey::default() @ ErrorCode::InvalidWalletAddress)]
     pub marketing_wallet: AccountInfo<'info>,
 
-    /// CHECK: Treasury wallet address
+    /// CHECK: Treasury wallet address - validated to match during ProcessTax
+    #[account(constraint = treasury_wallet.key() != Pubkey::default() @ ErrorCode::InvalidWalletAddress)]
     pub treasury_wallet: AccountInfo<'info>,
 
-    /// CHECK: Holder rewards pool token account
+    /// CHECK: Holder rewards pool token account - validated to match during ProcessTax
+    #[account(constraint = holder_rewards_pool.key() != Pubkey::default() @ ErrorCode::InvalidWalletAddress)]
     pub holder_rewards_pool: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
@@ -328,4 +331,8 @@ pub enum ErrorCode {
     InvalidTaxDistribution,
     #[msg("Tax amount is too small")]
     TaxAmountTooSmall,
+    #[msg("Invalid wallet address (cannot be default/zero)")]
+    InvalidWalletAddress,
+    #[msg("Arithmetic overflow in calculation")]
+    ArithmeticOverflow,
 }
