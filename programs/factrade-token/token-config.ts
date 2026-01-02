@@ -29,6 +29,7 @@ export const FACTRADE_TOKEN_CONFIG = {
   totalSupply: tokenomics.totalSupply,
   distribution: tokenomics.distribution,
   features: tokenomics.features,
+  taxSystem: tokenomics.taxSystem,
 };
 
 export interface TokenDistribution {
@@ -130,6 +131,85 @@ export async function mintTokensToDistribution(
   );
 
   await connection.sendTransaction(transaction, [payer, mintAuthority]);
+}
+
+/**
+ * Calculate tax amount based on transaction type
+ */
+export function calculateTaxAmount(
+  amount: number,
+  transactionType: 'buy' | 'sell' | 'transfer'
+): number {
+  if (!tokenomics.taxSystem?.enabled) {
+    return 0;
+  }
+
+  const taxBps = transactionType === 'buy' 
+    ? tokenomics.taxSystem.buyTax
+    : transactionType === 'sell'
+    ? tokenomics.taxSystem.sellTax
+    : tokenomics.taxSystem.transferTax;
+
+  return Math.floor((amount * taxBps) / 10000);
+}
+
+/**
+ * Calculate tax distribution breakdown
+ */
+export function calculateTaxDistribution(taxAmount: number) {
+  if (!tokenomics.taxSystem?.enabled) {
+    return null;
+  }
+
+  const distribution = tokenomics.taxSystem.taxDistribution;
+  
+  return {
+    marketing: Math.floor((taxAmount * distribution.marketing) / 100),
+    treasury: Math.floor((taxAmount * distribution.treasury) / 100),
+    burn: Math.floor((taxAmount * distribution.burn) / 100),
+    holderRewards: Math.floor((taxAmount * distribution.holderRewards) / 100),
+  };
+}
+
+/**
+ * Calculate referral rewards distribution across 5 levels
+ */
+export function calculateReferralRewards(
+  tradingVolume: number
+): {
+  level1: number;
+  level2: number;
+  level3: number;
+  level4: number;
+  level5: number;
+  total: number;
+} | null {
+  if (!tokenomics.taxSystem?.referralRewards?.enabled) {
+    return null;
+  }
+
+  const referralConfig = tokenomics.taxSystem.referralRewards;
+  const totalRewardPool = Math.floor(
+    (tradingVolume * referralConfig.taxAllocation) / 100
+  );
+
+  const levels = referralConfig.levelDistribution;
+  
+  return {
+    level1: Math.floor((totalRewardPool * levels.level1) / 100),
+    level2: Math.floor((totalRewardPool * levels.level2) / 100),
+    level3: Math.floor((totalRewardPool * levels.level3) / 100),
+    level4: Math.floor((totalRewardPool * levels.level4) / 100),
+    level5: Math.floor((totalRewardPool * levels.level5) / 100),
+    total: totalRewardPool,
+  };
+}
+
+/**
+ * Get tax configuration
+ */
+export function getTaxConfig() {
+  return tokenomics.taxSystem || null;
 }
 
 export { tokenomics };
