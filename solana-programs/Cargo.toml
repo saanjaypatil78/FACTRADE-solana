@@ -6,7 +6,6 @@ members = [
     "tax-distribution",
     "referral-rewards"
 ]
-resolver = "2"
 
 [profile.release]
 overflow-checks = true
