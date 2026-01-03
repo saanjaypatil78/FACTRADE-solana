@@ -2,19 +2,13 @@
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
-import { PublicKey } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
+import { createStakeInstruction, createUnstakeInstruction } from '../utils/program-integration';
 
 type LockPeriod = '7' | '14' | '30';
 
-interface StakingStats {
-  totalStaked: string;
-  myStaked: string;
-  apr: string;
-  lockPeriod: LockPeriod;
-}
-
 export function StakingInterface() {
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   const [amount, setAmount] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState<LockPeriod>('7');
@@ -28,13 +22,26 @@ export function StakingInterface() {
   ];
 
   const handleStake = async () => {
-    if (!publicKey || !amount) return;
+    if (!publicKey || !amount || !connection) return;
     
     setIsStaking(true);
     try {
-      // TODO: Implement actual staking transaction
-      console.log(`Staking ${amount} FACT for ${selectedPeriod} days`);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate transaction
+      const stakeAmount = parseFloat(amount) * 1e9; // Convert to lamports
+      const lockPeriodDays = parseInt(selectedPeriod);
+      
+      const instruction = await createStakeInstruction({
+        userPublicKey: publicKey,
+        amount: stakeAmount,
+        lockPeriod: lockPeriodDays,
+      });
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = publicKey;
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction(signature, 'confirmed');
+
       alert(`Successfully staked ${amount} FACT for ${selectedPeriod} days!`);
       setAmount('');
     } catch (error) {
@@ -46,13 +53,19 @@ export function StakingInterface() {
   };
 
   const handleUnstake = async () => {
-    if (!publicKey) return;
+    if (!publicKey || !connection) return;
     
     setIsUnstaking(true);
     try {
-      // TODO: Implement actual unstaking transaction
-      console.log('Initiating unstake...');
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate transaction
+      const instruction = await createUnstakeInstruction(publicKey);
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = publicKey;
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction(signature, 'confirmed');
+
       alert('Unstake initiated! Your tokens will be available after the unbonding period.');
     } catch (error) {
       console.error('Unstaking error:', error);

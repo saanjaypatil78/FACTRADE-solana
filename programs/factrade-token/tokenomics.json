@@ -37,7 +37,7 @@
     "mintable": false,
     "burnable": true,
     "pausable": false,
-    "transferFee": 0
+    "transferFee": 1
   },
   "taxSystem": {
     "enabled": true,
