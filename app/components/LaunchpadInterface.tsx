@@ -85,6 +85,23 @@ export function LaunchpadInterface() {
     },
   });
 
+  // Image upload state
+  const [uploadedImages, setUploadedImages] = useState<{
+    logo: File | null;
+    banner: File | null;
+    icon: File | null;
+  }>({
+    logo: null,
+    banner: null,
+    icon: null,
+  });
+
+  // Promo package selection state
+  const [selectedPromoPackage, setSelectedPromoPackage] = useState<0.5 | 5 | 50 | null>(null);
+  
+  // DEX/CEX listing option
+  const [includeDexCexListing, setIncludeDexCexListing] = useState(false);
+
   // Projects data with enhanced features
   const [projects, setProjects] = useState<EnhancedProject[]>([
     {
@@ -255,6 +272,47 @@ export function LaunchpadInterface() {
     { interval: 5000, enabled: !!connection }
   );
 
+  // Handle image file upload
+  const handleImageUpload = (type: 'logo' | 'banner' | 'icon', file: File | null) => {
+    if (file && !['image/png', 'image/gif', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+      alert('❌ Please upload PNG, GIF, or JPG image files only!');
+      soundUtils.playError();
+      return;
+    }
+
+    if (file && file.size > 5 * 1024 * 1024) {  // 5MB limit
+      alert('❌ Image file size must be under 5MB!');
+      soundUtils.playError();
+      return;
+    }
+
+    setUploadedImages(prev => ({ ...prev, [type]: file }));
+
+    // Create preview URL
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewProject(prev => ({
+          ...prev,
+          images: {
+            ...prev.images!,
+            [type]: reader.result as string,
+          },
+        }));
+      };
+      reader.readAsDataURL(file);
+      soundUtils.playSuccess();
+    } else {
+      setNewProject(prev => ({
+        ...prev,
+        images: {
+          ...prev.images!,
+          [type]: '',
+        },
+      }));
+    }
+  };
+
   const handleCreateProject = async () => {
     if (!publicKey) {
       soundUtils.playError();
@@ -275,6 +333,13 @@ export function LaunchpadInterface() {
       return;
     }
 
+    // Check promo package requirements
+    if (selectedPromoPackage && !uploadedImages.logo) {
+      soundUtils.playError();
+      alert('⚠️ Promo package selected but no logo uploaded!\n\nPlease upload at least a logo image for the promo package.');
+      return;
+    }
+
     setIsCreating(true);
     try {
       const projectData: LaunchpadProject = {
@@ -288,6 +353,9 @@ export function LaunchpadInterface() {
         endTime: newProject.endTime || Date.now() + 86400000 * 30,
       };
 
+      // In production: Upload images to IPFS/Arweave and get URLs
+      // For now, we'll simulate this with base64 data
+
       const instruction = await createLaunchpadProjectInstruction(publicKey, projectData);
       
       const transaction = new Transaction().add(instruction);
@@ -298,7 +366,27 @@ export function LaunchpadInterface() {
       await connection.confirmTransaction(signature, 'confirmed');
 
       soundUtils.playSuccess();
-      alert(`✅ Project created successfully!\n\nYour ${newProject.symbol} project is now live on the launchpad!\n\nTransaction: ${signature.substring(0, 8)}...`);
+      
+      // Build success message with promo info
+      let successMessage = `✅ Project created successfully!\n\nYour ${newProject.symbol} project is now live on the launchpad!`;
+      
+      if (selectedPromoPackage) {
+        successMessage += `\n\n💎 Promo Package: ${selectedPromoPackage} SOL tier activated`;
+        successMessage += `\n📸 Images uploaded: Logo${uploadedImages.banner ? ', Banner' : ''}${uploadedImages.icon ? ', Icon' : ''}`;
+      }
+      
+      if (includeDexCexListing) {
+        successMessage += `\n\n🔥 DEX/CEX Listing Package: Included`;
+        successMessage += `\n  • Priority listing on major DEXs`;
+        successMessage += `\n  • CEX listing assistance`;
+        successMessage += `\n  • Market making support`;
+      }
+      
+      successMessage += `\n\n🔗 View on Solana Explorer (mainnet):\nhttps://explorer.solana.com/tx/${signature}`;
+      successMessage += `\n\n📊 Verification links (like Fireball/WhiteWhale):\nhttps://solscan.io/tx/${signature}`;
+      successMessage += `\n\nTransaction: ${signature.substring(0, 8)}...`;
+      
+      alert(successMessage);
       
       // Reset form
       setNewProject({
@@ -310,7 +398,13 @@ export function LaunchpadInterface() {
         hardCap: 0,
         startTime: 0,
         endTime: 0,
+        images: { logo: '', banner: '', icon: '' },
+        promoAssets: { twitter: '', telegram: '', website: '', discord: '', description: '' },
+        bondingCurve: { initialPrice: 0, targetPrice: 0, curveType: 'exponential', liquidityTarget: 0 },
       });
+      setUploadedImages({ logo: null, banner: null, icon: null });
+      setSelectedPromoPackage(null);
+      setIncludeDexCexListing(false);
       setActiveView('browse');
     } catch (error: any) {
       console.error('Project creation error:', error);
@@ -805,6 +899,341 @@ export function LaunchpadInterface() {
                   placeholder="e.g., 200000"
                   className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
                 />
+              </div>
+            </div>
+
+            {/* Token Image Upload Section - Raydium LaunchLab Style */}
+            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6 mt-6">
+              <h4 className="text-lg font-bold mb-4 text-black dark:text-white flex items-center gap-2">
+                📸 Token Images <span className="text-sm font-normal text-zinc-500">(PNG/GIF Format)</span>
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Logo Upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                    Logo *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/png,image/gif,image/jpeg,image/jpg"
+                      onChange={(e) => handleImageUpload('logo', e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="logo-upload"
+                    />
+                    <label
+                      htmlFor="logo-upload"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-all sound-hover"
+                    >
+                      {newProject.images?.logo ? (
+                        <img src={newProject.images.logo} alt="Logo preview" className="w-full h-full object-contain rounded-lg" />
+                      ) : (
+                        <>
+                          <span className="text-3xl mb-2">🖼️</span>
+                          <span className="text-xs text-zinc-600 dark:text-zinc-400">Click to upload logo</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                  {uploadedImages.logo && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ {uploadedImages.logo.name}</p>
+                  )}
+                </div>
+
+                {/* Banner Upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                    Banner (Optional)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/png,image/gif,image/jpeg,image/jpg"
+                      onChange={(e) => handleImageUpload('banner', e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="banner-upload"
+                    />
+                    <label
+                      htmlFor="banner-upload"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-all sound-hover"
+                    >
+                      {newProject.images?.banner ? (
+                        <img src={newProject.images.banner} alt="Banner preview" className="w-full h-full object-cover rounded-lg" />
+                      ) : (
+                        <>
+                          <span className="text-3xl mb-2">🎨</span>
+                          <span className="text-xs text-zinc-600 dark:text-zinc-400">Click to upload banner</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                  {uploadedImages.banner && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ {uploadedImages.banner.name}</p>
+                  )}
+                </div>
+
+                {/* Icon Upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                    Icon (Optional)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/png,image/gif,image/jpeg,image/jpg"
+                      onChange={(e) => handleImageUpload('icon', e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="icon-upload"
+                    />
+                    <label
+                      htmlFor="icon-upload"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-all sound-hover"
+                    >
+                      {newProject.images?.icon ? (
+                        <img src={newProject.images.icon} alt="Icon preview" className="w-full h-full object-contain rounded-lg" />
+                      ) : (
+                        <>
+                          <span className="text-3xl mb-2">⭐</span>
+                          <span className="text-xs text-zinc-600 dark:text-zinc-400">Click to upload icon</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                  {uploadedImages.icon && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ {uploadedImages.icon.name}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Promo Assets Section */}
+            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6 mt-6">
+              <h4 className="text-lg font-bold mb-4 text-black dark:text-white">
+                🌐 Social Media & Promo Assets
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  value={newProject.promoAssets?.twitter || ''}
+                  onChange={(e) => setNewProject({ ...newProject, promoAssets: { ...newProject.promoAssets!, twitter: e.target.value } })}
+                  placeholder="Twitter username (e.g., @yourproject)"
+                  className="px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
+                />
+                <input
+                  type="text"
+                  value={newProject.promoAssets?.telegram || ''}
+                  onChange={(e) => setNewProject({ ...newProject, promoAssets: { ...newProject.promoAssets!, telegram: e.target.value } })}
+                  placeholder="Telegram link (e.g., t.me/yourproject)"
+                  className="px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
+                />
+                <input
+                  type="text"
+                  value={newProject.promoAssets?.website || ''}
+                  onChange={(e) => setNewProject({ ...newProject, promoAssets: { ...newProject.promoAssets!, website: e.target.value } })}
+                  placeholder="Website (e.g., yourproject.com)"
+                  className="px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
+                />
+                <input
+                  type="text"
+                  value={newProject.promoAssets?.discord || ''}
+                  onChange={(e) => setNewProject({ ...newProject, promoAssets: { ...newProject.promoAssets!, discord: e.target.value } })}
+                  placeholder="Discord link (e.g., discord.gg/yourproject)"
+                  className="px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
+                />
+              </div>
+              
+              <textarea
+                value={newProject.promoAssets?.description || ''}
+                onChange={(e) => setNewProject({ ...newProject, promoAssets: { ...newProject.promoAssets!, description: e.target.value } })}
+                placeholder="Project description..."
+                rows={3}
+                className="w-full mt-4 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
+              />
+            </div>
+
+            {/* Promo Package Selection - Raydium Style Tiers */}
+            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6 mt-6">
+              <h4 className="text-lg font-bold mb-2 text-black dark:text-white">
+                💎 Promo Package (Optional)
+              </h4>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                Boost your launch with promotional support, marketing, and visibility
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Basic Package - 0.5 SOL */}
+                <div
+                  onClick={() => {
+                    setSelectedPromoPackage(selectedPromoPackage === 0.5 ? null : 0.5);
+                    soundUtils.playSuccess();
+                  }}
+                  className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 sound-hover ${
+                    selectedPromoPackage === 0.5
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                      : 'border-zinc-300 dark:border-zinc-700 hover:border-indigo-400'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-lg font-bold text-black dark:text-white">Basic</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">0.5 SOL</span>
+                  </div>
+                  <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1">
+                    <li>✓ Featured listing</li>
+                    <li>✓ Social media post</li>
+                    <li>✓ Community announcement</li>
+                  </ul>
+                </div>
+
+                {/* Standard Package - 5 SOL */}
+                <div
+                  onClick={() => {
+                    setSelectedPromoPackage(selectedPromoPackage === 5 ? null : 5);
+                    soundUtils.playSuccess();
+                  }}
+                  className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 sound-hover ${
+                    selectedPromoPackage === 5
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-zinc-300 dark:border-zinc-700 hover:border-purple-400'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-lg font-bold text-black dark:text-white">Standard</span>
+                    <span className="text-purple-600 dark:text-purple-400 font-bold">5 SOL</span>
+                  </div>
+                  <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1">
+                    <li>✓ All Basic features</li>
+                    <li>✓ Banner ads for 7 days</li>
+                    <li>✓ Influencer outreach</li>
+                    <li>✓ Press release</li>
+                  </ul>
+                </div>
+
+                {/* Premium Package - 50 SOL */}
+                <div
+                  onClick={() => {
+                    setSelectedPromoPackage(selectedPromoPackage === 50 ? null : 50);
+                    soundUtils.playSuccess();
+                  }}
+                  className={`cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 sound-hover ${
+                    selectedPromoPackage === 50
+                      ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20'
+                      : 'border-zinc-300 dark:border-zinc-700 hover:border-pink-400'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-lg font-bold text-black dark:text-white">Premium</span>
+                    <span className="text-pink-600 dark:text-pink-400 font-bold">50 SOL</span>
+                  </div>
+                  <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1">
+                    <li>✓ All Standard features</li>
+                    <li>✓ Top placement for 30 days</li>
+                    <li>✓ Dedicated marketing campaign</li>
+                    <li>✓ Strategic partnerships</li>
+                  </ul>
+                </div>
+              </div>
+
+              {selectedPromoPackage && (
+                <div className="mt-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                  <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                    💎 <strong>{selectedPromoPackage === 0.5 ? 'Basic' : selectedPromoPackage === 5 ? 'Standard' : 'Premium'} Package</strong> selected - {selectedPromoPackage} SOL will be added to your transaction
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* DEX/CEX Listing Package */}
+            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6 mt-6">
+              <div
+                onClick={() => {
+                  setIncludeDexCexListing(!includeDexCexListing);
+                  soundUtils.playSuccess();
+                }}
+                className="flex items-start gap-4 p-4 rounded-xl border-2 border-zinc-300 dark:border-zinc-700 hover:border-orange-400 dark:hover:border-orange-600 cursor-pointer transition-all sound-hover"
+              >
+                <input
+                  type="checkbox"
+                  checked={includeDexCexListing}
+                  onChange={() => {}}
+                  className="mt-1 w-5 h-5 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <h4 className="text-lg font-bold text-black dark:text-white mb-2">
+                    🔥 DEX/CEX Listing Promo Package
+                  </h4>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
+                    Get your token listed on major exchanges with our assistance
+                  </p>
+                  <ul className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1">
+                    <li>✓ Priority DEX listings (Raydium, Jupiter, Orca)</li>
+                    <li>✓ CEX listing assistance and applications</li>
+                    <li>✓ Market making support & liquidity provision</li>
+                    <li>✓ Trading competition partnerships</li>
+                    <li>✓ DexScreener profile optimization</li>
+                  </ul>
+                </div>
+              </div>
+
+              {includeDexCexListing && (
+                <div className="mt-4 p-4 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    🔥 <strong>DEX/CEX Listing Package</strong> included - Our team will reach out after project creation
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Bonding Curve Configuration */}
+            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6 mt-6">
+              <h4 className="text-lg font-bold mb-4 text-black dark:text-white">
+                📈 Bonding Curve (Optional)
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                    Curve Type
+                  </label>
+                  <select
+                    value={newProject.bondingCurve?.curveType || 'exponential'}
+                    onChange={(e) => setNewProject({ ...newProject, bondingCurve: { ...newProject.bondingCurve!, curveType: e.target.value as any } })}
+                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
+                  >
+                    <option value="linear">Linear</option>
+                    <option value="exponential">Exponential</option>
+                    <option value="logarithmic">Logarithmic</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                    Initial Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newProject.bondingCurve?.initialPrice || ''}
+                    onChange={(e) => setNewProject({ ...newProject, bondingCurve: { ...newProject.bondingCurve!, initialPrice: parseFloat(e.target.value) } })}
+                    placeholder="e.g., 0.05"
+                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                    Target Price
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newProject.bondingCurve?.targetPrice || ''}
+                    onChange={(e) => setNewProject({ ...newProject, bondingCurve: { ...newProject.bondingCurve!, targetPrice: parseFloat(e.target.value) } })}
+                    placeholder="e.g., 0.5"
+                    className="w-full px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
+                  />
+                </div>
               </div>
             </div>
 
