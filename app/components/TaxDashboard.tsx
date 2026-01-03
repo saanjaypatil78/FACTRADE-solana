@@ -1,14 +1,12 @@
 'use client';
 
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useConnection } from '@solana/wallet-adapter-react';
 import { useState, useEffect } from 'react';
 import { fetchTaxStats, TaxStats } from '../utils/program-integration';
 import { useAccountSync } from '../utils/blockchain-sync';
-import { PublicKey } from '@solana/web3.js';
 import { PROGRAM_IDS } from '../utils/program-integration';
 
 export function TaxDashboard() {
-  const { publicKey } = useWallet();
   const { connection } = useConnection();
   const [taxStats, setTaxStats] = useState<TaxStats>({
     totalCollected: 0,
@@ -36,7 +34,7 @@ export function TaxDashboard() {
   // Real-time sync using blockchain-sync
   useAccountSync(
     connection,
-    publicKey ? PROGRAM_IDS.TAX_DISTRIBUTION : null,
+    connection ? PROGRAM_IDS.TAX_DISTRIBUTION : null,
     async () => {
       if (connection) {
         const stats = await fetchTaxStats(connection);

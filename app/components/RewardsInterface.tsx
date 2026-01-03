@@ -1,7 +1,7 @@
 'use client';
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Transaction } from '@solana/web3.js';
 import { createClaimRewardsInstruction, createCompoundRewardsInstruction } from '../utils/program-integration';
 

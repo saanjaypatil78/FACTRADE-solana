@@ -7,7 +7,6 @@ import {
   ReferralStats, 
   createRegisterReferralInstruction,
   createClaimReferralEarningsInstruction,
-  sendAndConfirmTransactionWithRetry,
 } from '../utils/program-integration';
 import { useAccountSync } from '../utils/blockchain-sync';
 import { PublicKey, Transaction } from '@solana/web3.js';
@@ -290,7 +289,7 @@ export function ReferralDashboard() {
             Your Referral Link
           </h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-            Share this link to earn rewards from your referrals' trading activity:
+            Share this link to earn rewards from your referrals&apos; trading activity:
           </p>
           
           <div className="flex gap-2">
@@ -320,7 +319,7 @@ export function ReferralDashboard() {
             Register with a Referrer
           </h3>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-            Have a referral code? Enter the referrer's wallet address to join their network:
+            Have a referral code? Enter the referrer&apos;s wallet address to join their network:
           </p>
           
           <div className="flex gap-2">

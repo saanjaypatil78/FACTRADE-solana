@@ -2,17 +2,10 @@
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useState } from 'react';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
 import { createStakeInstruction, createUnstakeInstruction } from '../utils/program-integration';
 
 type LockPeriod = '7' | '14' | '30';
-
-interface StakingStats {
-  totalStaked: string;
-  myStaked: string;
-  apr: string;
-  lockPeriod: LockPeriod;
-}
 
 export function StakingInterface() {
   const { publicKey, sendTransaction } = useWallet();

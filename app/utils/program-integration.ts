@@ -5,19 +5,21 @@ import {
   TransactionInstruction,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  Signer,
 } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 /**
  * Program IDs for FACTRADE Solana programs
+ * These are placeholder addresses - replace with actual deployed program addresses
  */
 export const PROGRAM_IDS = {
-  STAKING: new PublicKey('staK1ng111111111111111111111111111111111111'),
-  REWARDS: new PublicKey('rewRds1111111111111111111111111111111111111'),
-  GOVERNANCE: new PublicKey('govRn1111111111111111111111111111111111111111'),
-  TAX_DISTRIBUTION: new PublicKey('taxD1stR1But10n111111111111111111111111111'),
-  REFERRAL_REWARDS: new PublicKey('refRewrDs111111111111111111111111111111111'),
-  LAUNCHPAD: new PublicKey('lnchPd1111111111111111111111111111111111111'),
+  get STAKING() { return new PublicKey('11111111111111111111111111111112') },
+  get REWARDS() { return new PublicKey('11111111111111111111111111111113') },
+  get GOVERNANCE() { return new PublicKey('11111111111111111111111111111114') },
+  get TAX_DISTRIBUTION() { return new PublicKey('11111111111111111111111111111115') },
+  get REFERRAL_REWARDS() { return new PublicKey('11111111111111111111111111111116') },
+  get LAUNCHPAD() { return new PublicKey('11111111111111111111111111111117') },
 };
 
 /**
@@ -450,7 +452,7 @@ export async function createInvestInstruction(
 export async function sendAndConfirmTransactionWithRetry(
   connection: Connection,
   transaction: Transaction,
-  signers: any[]
+  signers: Signer[]
 ): Promise<string> {
   try {
     const signature = await connection.sendTransaction(transaction, signers, {
