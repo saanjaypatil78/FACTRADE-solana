@@ -39,6 +39,30 @@
     "pausable": false,
     "transferFee": 0
   },
+  "taxSystem": {
+    "enabled": true,
+    "buyTax": 200,
+    "sellTax": 200,
+    "transferTax": 100,
+    "taxDistribution": {
+      "marketing": 25,
+      "treasury": 25,
+      "burn": 25,
+      "holderRewards": 25
+    },
+    "referralRewards": {
+      "enabled": true,
+      "taxAllocation": 25,
+      "levels": 5,
+      "levelDistribution": {
+        "level1": 40,
+        "level2": 20,
+        "level3": 15,
+        "level4": 15,
+        "level5": 10
+      }
+    }
+  },
   "network": "mainnet-beta",
   "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 }

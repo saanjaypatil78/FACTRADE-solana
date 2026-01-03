@@ -40,3 +40,4 @@ target/
 deploy/
 .anchor/
 test-ledger/
+Cargo.lock
