@@ -6,8 +6,11 @@ import { TokenInfo } from "./components/TokenInfo";
 import { StakingInterface } from "./components/StakingInterface";
 import { RewardsInterface } from "./components/RewardsInterface";
 import { GovernanceInterface } from "./components/GovernanceInterface";
+import { LaunchpadInterface } from "./components/LaunchpadInterface";
+import { TaxDashboard } from "./components/TaxDashboard";
+import { ReferralDashboard } from "./components/ReferralDashboard";
 
-type Tab = 'overview' | 'stake' | 'rewards' | 'governance';
+type Tab = 'overview' | 'stake' | 'rewards' | 'governance' | 'launchpad' | 'tax-referral';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -17,6 +20,8 @@ export default function Home() {
     { id: 'stake' as Tab, name: 'Stake', icon: '🔒' },
     { id: 'rewards' as Tab, name: 'Rewards', icon: '💰' },
     { id: 'governance' as Tab, name: 'Governance', icon: '🗳️' },
+    { id: 'launchpad' as Tab, name: 'Launchpad', icon: '🚀' },
+    { id: 'tax-referral' as Tab, name: 'Tax & Referral', icon: '📈' },
   ];
 
   return (
@@ -101,6 +106,15 @@ export default function Home() {
           </div>
           <div className={`transition-opacity duration-300 ${activeTab === 'governance' ? 'opacity-100' : 'hidden opacity-0'}`}>
             <GovernanceInterface />
+          </div>
+          <div className={`transition-opacity duration-300 ${activeTab === 'launchpad' ? 'opacity-100' : 'hidden opacity-0'}`}>
+            <LaunchpadInterface />
+          </div>
+          <div className={`transition-opacity duration-300 ${activeTab === 'tax-referral' ? 'opacity-100' : 'hidden opacity-0'}`}>
+            <div className="space-y-8">
+              <TaxDashboard />
+              <ReferralDashboard />
+            </div>
           </div>
         </div>
       </main>

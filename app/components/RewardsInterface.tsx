@@ -2,6 +2,8 @@
 
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useState, useEffect } from 'react';
+import { Transaction } from '@solana/web3.js';
+import { createClaimRewardsInstruction, createCompoundRewardsInstruction } from '../utils/program-integration';
 
 interface RewardsData {
   pendingRewards: string;
@@ -11,7 +13,7 @@ interface RewardsData {
 }
 
 export function RewardsInterface() {
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   const [isClaiming, setIsClaiming] = useState(false);
   const [isCompounding, setIsCompounding] = useState(false);
@@ -23,13 +25,19 @@ export function RewardsInterface() {
   });
 
   const handleClaimRewards = async () => {
-    if (!publicKey) return;
+    if (!publicKey || !connection) return;
     
     setIsClaiming(true);
     try {
-      // TODO: Implement actual claim transaction
-      console.log('Claiming rewards...');
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate transaction
+      const instruction = await createClaimRewardsInstruction(publicKey);
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = publicKey;
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction(signature, 'confirmed');
+
       alert('Rewards claimed successfully!');
     } catch (error) {
       console.error('Claim error:', error);
@@ -40,13 +48,19 @@ export function RewardsInterface() {
   };
 
   const handleCompound = async () => {
-    if (!publicKey) return;
+    if (!publicKey || !connection) return;
     
     setIsCompounding(true);
     try {
-      // TODO: Implement actual compound transaction
-      console.log('Compounding rewards...');
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate transaction
+      const instruction = await createCompoundRewardsInstruction(publicKey);
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = publicKey;
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction(signature, 'confirmed');
+
       alert('Rewards compounded successfully!');
     } catch (error) {
       console.error('Compound error:', error);
