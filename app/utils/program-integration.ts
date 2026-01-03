@@ -45,8 +45,8 @@ export async function createStakeInstruction(
     PROGRAM_IDS.STAKING
   );
 
-  // Create instruction data
-  const data = Buffer.alloc(16);
+  // Create instruction data with proper buffer sizing
+  const data = Buffer.alloc(17); // 1 (instruction) + 8 (amount) + 1 (lock period) + 7 (padding)
   data.writeUInt8(0, 0); // Instruction index for stake
   data.writeBigUInt64LE(BigInt(params.amount), 1);
   data.writeUInt8(params.lockPeriod, 9);
@@ -184,13 +184,14 @@ export async function fetchTaxStats(
     }
 
     // Parse account data (simplified - actual parsing depends on program structure)
+    // Using BigInt to avoid precision loss for large numbers
     const data = accountInfo.data;
     return {
-      totalCollected: Number(data.readBigUInt64LE(8)),
-      totalBurned: Number(data.readBigUInt64LE(16)),
-      marketingAllocation: Number(data.readBigUInt64LE(24)),
-      treasuryAllocation: Number(data.readBigUInt64LE(32)),
-      holderRewardsAllocation: Number(data.readBigUInt64LE(40)),
+      totalCollected: Number(data.readBigUInt64LE(8)) / 1e9, // Convert to FACT tokens
+      totalBurned: Number(data.readBigUInt64LE(16)) / 1e9,
+      marketingAllocation: Number(data.readBigUInt64LE(24)) / 1e9,
+      treasuryAllocation: Number(data.readBigUInt64LE(32)) / 1e9,
+      holderRewardsAllocation: Number(data.readBigUInt64LE(40)) / 1e9,
     };
   } catch (error) {
     console.error('Error fetching tax stats:', error);
@@ -383,23 +384,27 @@ export async function createLaunchpadProjectInstruction(
     PROGRAM_IDS.LAUNCHPAD
   );
 
-  // Encode project data
+  // Encode project data efficiently using a single buffer
   const nameBuffer = Buffer.alloc(32);
   Buffer.from(project.name).copy(nameBuffer);
   
   const symbolBuffer = Buffer.alloc(8);
   Buffer.from(project.symbol).copy(symbolBuffer);
   
+  // Pre-allocate buffer for all numeric values (8 bytes * 6 fields = 48 bytes)
+  const numericData = Buffer.alloc(48);
+  numericData.writeBigUInt64LE(BigInt(project.totalSupply), 0);
+  numericData.writeBigUInt64LE(BigInt(project.price), 8);
+  numericData.writeBigUInt64LE(BigInt(project.softCap), 16);
+  numericData.writeBigUInt64LE(BigInt(project.hardCap), 24);
+  numericData.writeBigUInt64LE(BigInt(project.startTime), 32);
+  numericData.writeBigUInt64LE(BigInt(project.endTime), 40);
+  
   const data = Buffer.concat([
     Buffer.from([0]), // Instruction index for create project
     nameBuffer,
     symbolBuffer,
-    Buffer.from(new BigUint64Array([BigInt(project.totalSupply)]).buffer),
-    Buffer.from(new BigUint64Array([BigInt(project.price)]).buffer),
-    Buffer.from(new BigUint64Array([BigInt(project.softCap)]).buffer),
-    Buffer.from(new BigUint64Array([BigInt(project.hardCap)]).buffer),
-    Buffer.from(new BigUint64Array([BigInt(project.startTime)]).buffer),
-    Buffer.from(new BigUint64Array([BigInt(project.endTime)]).buffer),
+    numericData,
   ]);
 
   return new TransactionInstruction({

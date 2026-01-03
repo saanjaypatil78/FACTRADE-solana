@@ -31,7 +31,7 @@ export function TaxDashboard() {
     loadTaxStats();
   }, [connection]);
 
-  // Real-time sync using blockchain-sync
+  // Real-time sync using blockchain-sync (reduced frequency for tax stats)
   useAccountSync(
     connection,
     connection ? PROGRAM_IDS.TAX_DISTRIBUTION : null,
@@ -41,7 +41,7 @@ export function TaxDashboard() {
         setTaxStats(stats);
       }
     },
-    { interval: 1000, enabled: !!connection }
+    { interval: 10000, enabled: !!connection } // 10 seconds - tax stats don't change frequently
   );
 
   const formatAmount = (amount: number) => {
