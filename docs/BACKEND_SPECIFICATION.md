@@ -12,24 +12,93 @@ This document outlines the technical requirements and architecture for backend s
 - Tax/Referral dashboards with real-time sync
 - Cursor animations, sound effects, comprehensive error handling
 
-**Backend/Infrastructure**: ❌ Not Started
-- Solana programs use placeholder IDs
-- No deployment automation
-- No DEX integrations
-- No AI agent orchestration
+**Existing Solana Programs**: ✅ Implemented (Anchor Framework)
+- **Staking Program** (`stkePW8VgQF8CxNm6k7q1FKzGvzRgJ7xNJ8jT6ZVXy`): 7/14/30 day lock periods, reward multipliers, emergency pause
+- **Rewards Program** (`rewrDSBhqKMxLkhJRnEKRsJKt7rPt5bBF4VVXsEK6Nx`): Reward distribution, claim functions
+- **Governance Program** (`govnNQF7Z8k9pVwJLzY4XpKj6h1rGE3tqTmE9xKvPp`): Voting, proposals, execution
+- **Tax Distribution Program** (`taxD1stR1But10n111111111111111111111111111`): 2% buy/sell, 1% transfer, 25% splits
+- **Referral Rewards Program** (`refRewrDs111111111111111111111111111111111`): 5-level tree, earnings tracking
+
+**Backend/Infrastructure**: ⚠️ Partially Complete
+- ✅ Core Solana programs deployed (staking, rewards, governance, tax, referral)
+- ❌ Token launcher program not deployed
+- ❌ Bonding curve program not deployed  
+- ❌ Image storage service (IPFS/Arweave)
+- ❌ Promo package automation
+- ❌ DEX integration layer
+- ❌ AI agent orchestration
+- ❌ Backend API services
 
 ---
 
-## Phase 1: Solana Smart Contract Deployment
+## Phase 1: Solana Smart Contract Development & Integration
 
-### 1.1 Token Launcher Contract
+### 1.1 Existing Programs (Already Implemented)
 
-**Purpose**: Autonomous SPL token creation with configurable tokenomics
+The following Solana programs are already implemented in Anchor and located in `/solana-programs`:
+
+#### **Staking Program** ✅
+- **Program ID**: `stkePW8VgQF8CxNm6k7q1FKzGvzRgJ7xNJ8jT6ZVXy`
+- **Location**: `solana-programs/staking/src/lib.rs`
+- **Implemented Features**:
+  - Initialize staking pools with configurable unbonding periods (7/14/30 days)
+  - Stake/unstake tokens with lock periods
+  - Reward multipliers per lock period
+  - Emergency pause functionality
+  - Minimum stake amount enforcement
+  - Total staked tracking
+- **Status**: Ready for deployment, needs testing on devnet
+
+#### **Rewards Program** ✅
+- **Program ID**: `rewrDSBhqKMxLkhJRnEKRsJKt7rPt5bBF4VVXsEK6Nx`
+- **Location**: `solana-programs/rewards/src/lib.rs`
+- **Implemented Features**:
+  - Reward pool management
+  - Claim reward functions
+  - APY calculation
+  - Distribution scheduling
+- **Status**: Ready for deployment
+
+#### **Governance Program** ✅
+- **Program ID**: `govnNQF7Z8k9pVwJLzY4XpKj6h1rGE3tqTmE9xKvPp`
+- **Location**: `solana-programs/governance/src/lib.rs`
+- **Implemented Features**:
+  - Proposal creation and voting
+  - Vote tallying
+  - Execution after passing
+- **Status**: Ready for deployment
+
+#### **Tax Distribution Program** ✅
+- **Program ID**: `taxD1stR1But10n111111111111111111111111111`
+- **Location**: `solana-programs/tax-distribution/src/lib.rs`
+- **Implemented Features**:
+  - Automated tax collection (2% buy/sell, 1% transfer)
+  - Distribution to 4 categories (25% each): Marketing, Treasury, Burn, Holder Rewards
+  - Threshold-based automatic distribution
+  - Tax statistics tracking
+- **Status**: Ready for deployment
+- **Integration**: Frontend already configured in `TaxDashboard.tsx`
+
+#### **Referral Rewards Program** ✅
+- **Program ID**: `refRewrDs111111111111111111111111111111111`
+- **Location**: `solana-programs/referral-rewards/src/lib.rs`
+- **Implemented Features**:
+  - 5-level referral tree tracking
+  - Earnings distribution (40/20/15/15/10% per level)
+  - Referrer registration with unique codes
+  - Claim earnings functionality
+- **Status**: Ready for deployment
+- **Integration**: Frontend already configured in `ReferralDashboard.tsx`
+
+### 1.2 New Programs to Implement (Launchpad Features)
+
+#### **Token Launcher Contract** ❌ NEW
+
+**Purpose**: Autonomous SPL token creation with configurable tokenomics for launchpad
 
 **Features Required**:
 - Create SPL tokens with custom:
-  - Token name
-  - Token ticker/symbol
+  - Token name, ticker/symbol
   - Total supply (configurable, not fixed)
   - Decimals (default 9)
   - Logo/metadata URI (IPFS)
@@ -39,13 +108,14 @@ This document outlines the technical requirements and architecture for backend s
   - Liquidity provision (DEX)
   - Ecosystem/marketing reserves
   - Treasury allocation
-- Single contract address per token launch
-- Support for multiple token launches from same contract
+- Single contract address managing multiple token launches
+- Integration with existing tax and referral programs
 
 **Technology Stack**:
-- Anchor Framework (Rust)
+- Anchor Framework (Rust) - matching existing programs
 - SPL Token Program
 - Metaplex Token Metadata
+- Cross-program invocation (CPI) to tax-distribution and referral-rewards programs
 
 **Contract Verification**:
 - Solana Explorer verification
@@ -56,69 +126,60 @@ This document outlines the technical requirements and architecture for backend s
 - Devnet (testing)
 - Mainnet-beta (production)
 
-### 1.2 Bonding Curve Contract
+**Integration Points**:
+- Call tax-distribution program for token creation fees
+- Register with referral-rewards program for launch bonuses
 
-**Purpose**: Dynamic pricing mechanism for token sales
+#### **Bonding Curve Contract** ❌ NEW
+
+**Purpose**: Dynamic pricing mechanism for token sales (Raydium LaunchLab style)
 
 **Features Required**:
 - Three curve types: Linear, Exponential, Logarithmic
 - Real-time price calculation based on supply sold
 - Configurable parameters:
-  - Initial price
-  - Target price
-  - Curve type
-  - Fundraising goal
+  - Initial price, target price, curve type, fundraising goal
 - Liquidity management:
   - 70% auto-allocation to DEX liquidity
   - 30% to project team
 - Purchase/refund functions
 - Progress tracking
 
-### 1.3 Tax Distribution Contract
+**Integration Points**:
+- Call tax-distribution program on each purchase (2% tax)
+- Register purchases with referral-rewards program
+- Auto-create Raydium/Jupiter pools when fundraising goal reached
 
-**Purpose**: Automated tax collection and distribution
+### 1.3 Integration with Existing Programs
 
-**Features Required**:
-- Tax rates:
-  - Buy: 2% (200 basis points)
-  - Sell: 2% (200 basis points)
-  - Transfer: 1% (100 basis points)
-- Distribution (25% each):
-  - Marketing wallet
-  - Treasury wallet
-  - Burn address
-  - Holder rewards pool
-- Automated distribution on threshold
-- Tax collection tracking and reporting
+**Task**: Update frontend `program-integration.ts` to use real deployed addresses
 
-### 1.4 Referral Rewards Contract
+**Current State**:
+- Placeholder IDs: `11111111111111111111111111111112` (staking), etc.
+- Needs replacement with: `stkePW8VgQF8CxNm6k7q1FKzGvzRgJ7xNJ8jT6ZVXy` (staking), etc.
 
-**Purpose**: 5-level referral system with earnings tracking
+**Action Items**:
+1. Deploy existing 5 programs to devnet using `anchor deploy`
+2. Update `app/utils/program-integration.ts` with deployed addresses
+3. Test frontend integration on devnet
+4. Deploy to mainnet-beta
+5. Update production frontend with mainnet addresses
 
-**Features Required**:
-- Register referrers with unique codes
-- Track referral tree (5 levels deep)
-- Distribution percentages:
-  - Level 1: 40%
-  - Level 2: 20%
-  - Level 3: 15%
-  - Level 4: 15%
-  - Level 5: 10%
-- Claim functionality
-- Earnings aggregation by level
-- Analytics and reporting
+### 1.4 Deployment Priority & Timeline
 
-### 1.5 Staking/Rewards Contracts
+**Week 1-2: Deploy Existing Programs**
+- Day 1-3: Test existing programs on devnet
+- Day 4-5: Deploy to devnet, update frontend with devnet addresses
+- Day 6-7: Frontend testing with live programs
+- Day 8-10: Mainnet deployment preparation (audit, security review)
+- Day 11-14: Deploy to mainnet, update production frontend
 
-**Purpose**: Token staking with APY rewards
+**Week 3-4: Implement & Deploy New Programs**
+- Day 15-21: Develop Token Launcher Contract
+- Day 22-28: Develop Bonding Curve Contract
+- Test on devnet, deploy to mainnet
 
-**Features Required**:
-- Stake/unstake functions
-- Dynamic APY calculation
-- Rewards distribution
-- Lock period options
-- Emergency withdrawal
-- Governance weight calculation
+**Total Timeline**: 4 weeks for Phase 1
 
 ---
 
@@ -126,31 +187,55 @@ This document outlines the technical requirements and architecture for backend s
 
 ### 2.1 Token Deployment Service
 
+**Purpose**: Automate token launch process, coordinate with existing programs
+
 **Endpoints**:
 
 ```
 POST /api/launchpad/deploy-token
 ```
-- Input: Token metadata, supply, distribution config, bonding curve params
+- Input: Token metadata (name, symbol, supply, logo, banner, icon), distribution config, bonding curve params, promo tier
 - Process:
   1. Validate input parameters
-  2. Upload images to IPFS/Arweave
-  3. Create token metadata JSON
-  4. Build and submit Solana transaction
-  5. Initialize bonding curve
-  6. Set up tax distribution
-  7. Configure liquidity provision
-- Output: Transaction signature, token address, metadata URI
+  2. Upload images (logo, banner, icon) to IPFS/Arweave
+  3. Create token metadata JSON on IPFS
+  4. Build Solana transaction calling Token Launcher Contract
+  5. Initialize bonding curve with selected type (Linear/Exponential/Logarithmic)
+  6. **CPI to tax-distribution program** to set up 2% buy/sell, 1% transfer tax
+  7. **CPI to referral-rewards program** to register project for referral bonuses
+  8. Configure liquidity provision (70% to DEX, 30% to team)
+  9. Process promo package payment (0.5/5/50 SOL)
+  10. Activate promo features based on tier
+- Output: 
+  - Transaction signature
+  - Token address
+  - Metadata URI (IPFS)
+  - Solana Explorer link: `https://explorer.solana.com/tx/{signature}`
+  - Solscan link: `https://solscan.io/tx/{signature}`
+  - Tax distribution account ID (from tax-distribution program)
+  - Referral program registration ID
+
+**Integration with Existing Programs**:
+- Calls `staking_program` if token includes staking features
+- Calls `tax_distribution` program to initialize tax collection
+- Calls `referral_rewards` program to enable referral tracking
+- Calls `rewards_program` if token has holder rewards
 
 ```
 GET /api/launchpad/token/{address}
 ```
 - Get token details, stats, progress
+- Query bonding curve state
+- Fetch tax distribution stats from tax-distribution program
+- Fetch referral stats from referral-rewards program
+- Return aggregated data for frontend display
 
 ```
 GET /api/launchpad/projects
 ```
-- List all launched projects with filters
+- List all launched projects with filters (active/upcoming/ended)
+- Include bonding curve progress, market cap, liquidity
+- Query staking program for projects with staking enabled
 
 ### 2.2 DEX Integration Service
 
@@ -224,26 +309,63 @@ GET /api/verify/status/{address}
 
 ### 2.5 Auto-Sync Service
 
+**Purpose**: Real-time data synchronization between Solana programs and frontend
+
 **WebSocket Server**:
 ```
 ws://api.factrade.io/sync
 ```
 - Real-time updates for:
-  - Launchpad project progress
-  - Tax collection stats
-  - Referral earnings
-  - Staking rewards
-  - Price updates (bonding curve)
+  - Launchpad project progress (bonding curve state)
+  - **Tax collection stats** (from tax-distribution program at `taxD1stR1But10n111111111111111111111111111`)
+  - **Referral earnings** (from referral-rewards program at `refRewrDs111111111111111111111111111111111`)
+  - **Staking rewards** (from staking program at `stkePW8VgQF8CxNm6k7q1FKzGvzRgJ7xNJ8jT6ZVXy`)
+  - **Rewards distribution** (from rewards program at `rewrDSBhqKMxLkhJRnEKRsJKt7rPt5bBF4VVXsEK6Nx`)
+  - Price updates (bonding curve dynamic pricing)
+  - **Governance proposals** (from governance program at `govnNQF7Z8k9pVwJLzY4XpKj6h1rGE3tqTmE9xKvPp`)
 
-**Polling API**:
+**Polling API** (Fallback):
 ```
-GET /api/sync/launchpad
+GET /api/sync/launchpad/{project-id}
+```
+- Query bonding curve contract state
+- Return current price, progress, investors count
+
+```
 GET /api/sync/tax-stats
-GET /api/sync/referral/{user}
-GET /api/sync/staking/{user}
 ```
-- Fallback for WebSocket failures
-- Configurable polling intervals
+- Query tax-distribution program
+- Return total collected, burned, distributions to marketing/treasury/holders
+
+```
+GET /api/sync/referral/{user-wallet}
+```
+- Query referral-rewards program
+- Return user's referral tree, earnings by level (1-5), total earned
+
+```
+GET /api/sync/staking/{user-wallet}
+```
+- Query staking program
+- Return user's staked amount, lock period, rewards earned, unbonding status
+
+```
+GET /api/sync/rewards/{user-wallet}
+```
+- Query rewards program
+- Return claimable rewards, APY, distribution schedule
+
+```
+GET /api/sync/governance
+```
+- Query governance program
+- Return active proposals, vote tallies, execution status
+
+**Program Account Monitoring**:
+- Subscribe to Solana account changes using `accountSubscribe` RPC method
+- Monitor all 5 existing program accounts + 2 new program accounts
+- Parse account data updates and push to WebSocket clients
+- Configurable intervals: 1s (user data), 5s (project data), 10s (system stats)
 
 ---
 
@@ -254,29 +376,36 @@ GET /api/sync/staking/{user}
 **PostgreSQL Tables**:
 
 ```sql
--- Projects
+-- Projects (Launchpad)
 CREATE TABLE projects (
   id UUID PRIMARY KEY,
   token_address TEXT UNIQUE NOT NULL,
+  bonding_curve_address TEXT,  -- NEW: Bonding curve program account
   name TEXT NOT NULL,
   symbol TEXT NOT NULL,
   description TEXT,
+  logo_uri TEXT,  -- NEW: IPFS URI for logo image
+  banner_uri TEXT,  -- NEW: IPFS URI for banner image
+  icon_uri TEXT,  -- NEW: IPFS URI for icon image
   total_supply BIGINT,
-  bonding_curve_type TEXT,
+  bonding_curve_type TEXT CHECK (bonding_curve_type IN ('linear', 'exponential', 'logarithmic')),
   initial_price DECIMAL,
   target_price DECIMAL,
-  logo_uri TEXT,
-  banner_uri TEXT,
-  icon_uri TEXT,
-  twitter TEXT,
+  twitter TEXT,  -- Social media links
   telegram TEXT,
   website TEXT,
   discord TEXT,
-  promo_tier DECIMAL,
-  dex_cex_listing BOOLEAN,
+  promo_tier DECIMAL CHECK (promo_tier IN (0.5, 5, 50)),  -- Promo package tier
+  dex_cex_listing BOOLEAN DEFAULT FALSE,  -- DEX/CEX listing package
+  tax_program_account TEXT,  -- NEW: Reference to tax-distribution program account
+  referral_program_account TEXT,  -- NEW: Reference to referral-rewards program account
+  staking_pool_account TEXT,  -- NEW: Optional reference to staking program pool
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX idx_projects_token ON projects(token_address);
+CREATE INDEX idx_projects_promo ON projects(promo_tier);
 
 -- Investments
 CREATE TABLE investments (
@@ -285,13 +414,20 @@ CREATE TABLE investments (
   investor_address TEXT NOT NULL,
   amount_sol DECIMAL NOT NULL,
   tokens_received DECIMAL NOT NULL,
+  bonding_curve_price DECIMAL,  -- Price at time of purchase (from bonding curve)
   transaction_signature TEXT UNIQUE,
+  referrer_address TEXT,  -- NEW: Referrer wallet (links to referral-rewards program)
   timestamp TIMESTAMP DEFAULT NOW()
 );
 
--- Tax Distributions
+CREATE INDEX idx_investments_project ON investments(project_id);
+CREATE INDEX idx_investments_investor ON investments(investor_address);
+CREATE INDEX idx_investments_referrer ON investments(referrer_address);
+
+-- Tax Distributions (synced with tax-distribution program)
 CREATE TABLE tax_distributions (
   id UUID PRIMARY KEY,
+  program_account TEXT NOT NULL,  -- NEW: Tax-distribution program account address
   token_address TEXT NOT NULL,
   total_collected BIGINT,
   total_burned BIGINT,
@@ -299,30 +435,75 @@ CREATE TABLE tax_distributions (
   treasury_allocated BIGINT,
   holder_rewards_allocated BIGINT,
   last_distribution TIMESTAMP,
-  created_at TIMESTAMP DEFAULT NOW()
+  on_chain_data JSONB,  -- NEW: Cache of on-chain account data from program
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Referrals
+CREATE INDEX idx_tax_program ON tax_distributions(program_account);
+CREATE INDEX idx_tax_token ON tax_distributions(token_address);
+
+-- Referrals (synced with referral-rewards program)
 CREATE TABLE referrals (
   id UUID PRIMARY KEY,
+  program_account TEXT NOT NULL,  -- NEW: Referral-rewards program account
   referrer_address TEXT NOT NULL,
   referee_address TEXT NOT NULL,
-  level INT NOT NULL,
-  earnings BIGINT DEFAULT 0,
-  claimed BIGINT DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW()
+  level INT NOT NULL CHECK (level BETWEEN 1 AND 5),  -- 5-level tree
+  earnings BIGINT DEFAULT 0,  -- Cumulative earnings
+  claimed BIGINT DEFAULT 0,  -- Claimed amount
+  transaction_count INT DEFAULT 0,  -- Number of transactions generating rewards
+  on_chain_data JSONB,  -- NEW: Cache of on-chain referral tree data
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX idx_referrals_referrer ON referrals(referrer_address);
+CREATE INDEX idx_referrals_referee ON referrals(referee_address);
+CREATE INDEX idx_referrals_program ON referrals(program_account);
+
+-- Staking Records (synced with staking program)
+CREATE TABLE staking_records (
+  id UUID PRIMARY KEY,
+  staking_pool_account TEXT NOT NULL,  -- NEW: Staking program pool account
+  user_address TEXT NOT NULL,
+  staked_amount BIGINT NOT NULL,
+  lock_period INT CHECK (lock_period IN (7, 14, 30)),  -- Days
+  staked_at TIMESTAMP NOT NULL,
+  unstake_at TIMESTAMP,  -- Unlocking timestamp
+  rewards_earned BIGINT DEFAULT 0,
+  rewards_claimed BIGINT DEFAULT 0,
+  status TEXT CHECK (status IN ('active', 'unbonding', 'withdrawn')),
+  on_chain_data JSONB,  -- Cache of staking account data
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_staking_pool ON staking_records(staking_pool_account);
+CREATE INDEX idx_staking_user ON staking_records(user_address);
+CREATE INDEX idx_staking_status ON staking_records(status);
 
 -- Promo Packages
 CREATE TABLE promo_activations (
   id UUID PRIMARY KEY,
   project_id UUID REFERENCES projects(id),
-  tier DECIMAL NOT NULL,
-  features JSONB,
+  tier DECIMAL NOT NULL CHECK (tier IN (0.5, 5, 50)),
+  features JSONB,  -- Tier-specific features activated
+  payment_signature TEXT,  -- SOL payment transaction
   activated_at TIMESTAMP DEFAULT NOW(),
-  expires_at TIMESTAMP
+  expires_at TIMESTAMP  -- For time-limited features (7 days banners, 30 days top placement)
 );
+
+CREATE INDEX idx_promo_project ON promo_activations(project_id);
+CREATE INDEX idx_promo_tier ON promo_activations(tier);
 ```
+
+**Data Synchronization Strategy**:
+- Backend API queries Solana programs directly for real-time data
+- PostgreSQL stores historical data and caches recent state for performance
+- WebSocket server pushes updates when on-chain state changes
+- Polling API provides fallback access to cached data
+- Periodic sync jobs reconcile database with on-chain state (every 5 minutes)
 
 ### 3.2 IPFS/Arweave Integration
 
