@@ -28,6 +28,7 @@ export function ReferralDashboard() {
   const [isClaiming, setIsClaiming] = useState(false);
   const [referrerAddress, setReferrerAddress] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
   // Auto-sync with blockchain
   useEffect(() => {
@@ -37,6 +38,7 @@ export function ReferralDashboard() {
         const stats = await fetchReferralStats(connection, publicKey);
         setReferralStats(stats);
         setLoading(false);
+        setLastUpdate(Date.now());
       }
     };
 
@@ -51,6 +53,7 @@ export function ReferralDashboard() {
       if (connection && publicKey) {
         const stats = await fetchReferralStats(connection, publicKey);
         setReferralStats(stats);
+        setLastUpdate(Date.now());
       }
     },
     { interval: 1000, enabled: !!connection && !!publicKey }
@@ -184,6 +187,15 @@ export function ReferralDashboard() {
         <p className="text-zinc-600 dark:text-zinc-400 mb-6">
           Earn rewards from 5 levels of referrals. Share your link and earn from all trading activity!
         </p>
+
+        {/* Auto-sync indicator */}
+        <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Auto-syncing every 1s</span>
+            <span className="text-xs">• Last updated: {new Date(lastUpdate).toLocaleTimeString()}</span>
+          </div>
+        </div>
 
         {/* Earnings Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

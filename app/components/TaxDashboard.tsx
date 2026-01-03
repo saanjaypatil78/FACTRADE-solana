@@ -16,6 +16,7 @@ export function TaxDashboard() {
     holderRewardsAllocation: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
   // Auto-sync with blockchain
   useEffect(() => {
@@ -25,6 +26,7 @@ export function TaxDashboard() {
         const stats = await fetchTaxStats(connection);
         setTaxStats(stats);
         setLoading(false);
+        setLastUpdate(Date.now());
       }
     };
 
@@ -39,6 +41,7 @@ export function TaxDashboard() {
       if (connection) {
         const stats = await fetchTaxStats(connection);
         setTaxStats(stats);
+        setLastUpdate(Date.now());
       }
     },
     { interval: 10000, enabled: !!connection } // 10 seconds - tax stats don't change frequently
@@ -93,6 +96,15 @@ export function TaxDashboard() {
           Real-time tracking of transaction taxes and their distribution across the ecosystem.
           All transactions are taxed (2% buy/sell, 1% transfer) and automatically distributed.
         </p>
+
+        {/* Auto-sync indicator */}
+        <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span>Auto-syncing every 10s</span>
+            <span className="text-xs">• Last updated: {new Date(lastUpdate).toLocaleTimeString()}</span>
+          </div>
+        </div>
 
         {/* Total Collected Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
