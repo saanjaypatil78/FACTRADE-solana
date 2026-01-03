@@ -10,12 +10,39 @@ import {
   PROGRAM_IDS,
 } from '../utils/program-integration';
 import { useAccountSync } from '../utils/blockchain-sync';
+import { soundUtils } from './SoundEffects';
 
-interface Project extends LaunchpadProject {
+interface ProjectImage {
+  logo: string;
+  banner: string;
+  icon: string;
+}
+
+interface PromoAssets {
+  twitter: string;
+  telegram: string;
+  website: string;
+  discord: string;
+  description: string;
+}
+
+interface BondingCurveConfig {
+  initialPrice: number;
+  targetPrice: number;
+  curveType: 'linear' | 'exponential' | 'logarithmic';
+  liquidityTarget: number;
+}
+
+interface EnhancedProject extends LaunchpadProject {
   id: string;
   raised: number;
   investors: number;
   status: 'upcoming' | 'active' | 'ended';
+  images?: ProjectImage;
+  promoAssets?: PromoAssets;
+  bondingCurve?: BondingCurveConfig;
+  marketCap?: number;
+  liquidity?: number;
 }
 
 export function LaunchpadInterface() {
@@ -28,8 +55,8 @@ export function LaunchpadInterface() {
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
-  // Form state for creating projects
-  const [newProject, setNewProject] = useState<Partial<LaunchpadProject>>({
+  // Enhanced form state for creating projects with images and promo
+  const [newProject, setNewProject] = useState<Partial<EnhancedProject>>({
     name: '',
     symbol: '',
     totalSupply: 0,
@@ -38,10 +65,28 @@ export function LaunchpadInterface() {
     hardCap: 0,
     startTime: 0,
     endTime: 0,
+    images: {
+      logo: '',
+      banner: '',
+      icon: '',
+    },
+    promoAssets: {
+      twitter: '',
+      telegram: '',
+      website: '',
+      discord: '',
+      description: '',
+    },
+    bondingCurve: {
+      initialPrice: 0,
+      targetPrice: 0,
+      curveType: 'exponential',
+      liquidityTarget: 0,
+    },
   });
 
-  // Projects data with auto-sync capability
-  const [projects, setProjects] = useState<Project[]>([
+  // Projects data with enhanced features
+  const [projects, setProjects] = useState<EnhancedProject[]>([
     {
       id: '1',
       name: 'DeFi Protocol',
@@ -55,6 +100,26 @@ export function LaunchpadInterface() {
       status: 'active',
       startTime: Date.now() - 86400000,
       endTime: Date.now() + 86400000 * 7,
+      images: {
+        logo: '🏦',
+        banner: '🌐',
+        icon: '💼',
+      },
+      promoAssets: {
+        twitter: '@DeFiProtocol',
+        telegram: 't.me/defiprotocol',
+        website: 'defiprotocol.io',
+        discord: 'discord.gg/defi',
+        description: 'Revolutionary DeFi protocol with automated market making and yield optimization',
+      },
+      bondingCurve: {
+        initialPrice: 0.05,
+        targetPrice: 0.2,
+        curveType: 'exponential',
+        liquidityTarget: 100000,
+      },
+      marketCap: 12500000,
+      liquidity: 87500,
     },
     {
       id: '2',
@@ -69,6 +134,26 @@ export function LaunchpadInterface() {
       status: 'upcoming',
       startTime: Date.now() + 86400000 * 3,
       endTime: Date.now() + 86400000 * 10,
+      images: {
+        logo: '🎮',
+        banner: '🕹️',
+        icon: '🏆',
+      },
+      promoAssets: {
+        twitter: '@GameToken',
+        telegram: 't.me/gametoken',
+        website: 'gametoken.gg',
+        discord: 'discord.gg/game',
+        description: 'Next-gen gaming ecosystem with P2E mechanics and NFT integration',
+      },
+      bondingCurve: {
+        initialPrice: 0.01,
+        targetPrice: 0.1,
+        curveType: 'linear',
+        liquidityTarget: 250000,
+      },
+      marketCap: 0,
+      liquidity: 0,
     },
     {
       id: '3',
@@ -83,6 +168,26 @@ export function LaunchpadInterface() {
       status: 'ended',
       startTime: Date.now() - 86400000 * 14,
       endTime: Date.now() - 86400000 * 7,
+      images: {
+        logo: '🖼️',
+        banner: '🎨',
+        icon: '💎',
+      },
+      promoAssets: {
+        twitter: '@NFTMarket',
+        telegram: 't.me/nftmarket',
+        website: 'nftmarket.art',
+        discord: 'discord.gg/nft',
+        description: 'Premium NFT marketplace with royalty sharing and creator tools',
+      },
+      bondingCurve: {
+        initialPrice: 0.1,
+        targetPrice: 0.25,
+        curveType: 'logarithmic',
+        liquidityTarget: 150000,
+      },
+      marketCap: 37750000,
+      liquidity: 302000,
     },
   ]);
 
@@ -100,10 +205,32 @@ export function LaunchpadInterface() {
             );
             const newInvestors = project.investors + Math.floor(Math.random() * 3);
             
+            // Update bonding curve price
+            const progress = newRaised / project.hardCap;
+            let currentPrice = project.price;
+            
+            if (project.bondingCurve) {
+              const { initialPrice, targetPrice, curveType } = project.bondingCurve;
+              switch (curveType) {
+                case 'linear':
+                  currentPrice = initialPrice + (targetPrice - initialPrice) * progress;
+                  break;
+                case 'exponential':
+                  currentPrice = initialPrice * Math.pow(targetPrice / initialPrice, progress);
+                  break;
+                case 'logarithmic':
+                  currentPrice = initialPrice + (targetPrice - initialPrice) * Math.log(1 + progress * 9) / Math.log(10);
+                  break;
+              }
+            }
+            
             return {
               ...project,
               raised: newRaised,
               investors: newInvestors,
+              price: currentPrice,
+              marketCap: newRaised * (project.totalSupply / project.hardCap),
+              liquidity: newRaised * 0.7, // 70% goes to liquidity
             };
           }
           return project;
@@ -319,108 +446,204 @@ export function LaunchpadInterface() {
             {projects.map((project) => (
               <div
                 key={project.id}
-                className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 border border-zinc-200 dark:border-zinc-800 hover:shadow-xl transition-all duration-300"
+                className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-0 border border-zinc-200 dark:border-zinc-800 hover:shadow-xl transition-all duration-300 cursor-tilt overflow-hidden"
               >
-                {/* Project Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-black dark:text-white mb-1">
-                      {project.name}
-                    </h3>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                      ${project.symbol}
-                    </p>
-                  </div>
-                  <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getStatusColor(project.status)} text-white text-sm font-semibold`}>
-                    {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                {/* Project Banner/Images */}
+                <div className="relative h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-6xl">
+                  {project.images?.banner || '🚀'}
+                  <div className="absolute top-3 right-3">
+                    <div className={`px-3 py-1 rounded-full bg-gradient-to-r ${getStatusColor(project.status)} text-white text-sm font-semibold backdrop-blur-sm`}>
+                      {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                    </div>
                   </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-zinc-600 dark:text-zinc-400">Progress</span>
-                    <span className="font-semibold text-black dark:text-white">
-                      ${project.raised.toLocaleString()} / ${project.hardCap.toLocaleString()}
-                    </span>
+                <div className="p-6">
+                  {/* Project Header with Logo */}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="text-5xl">{project.images?.logo || '🪙'}</div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-black dark:text-white mb-1">
+                        {project.name}
+                      </h3>
+                      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                        ${project.symbol}
+                      </p>
+                      {project.promoAssets?.description && (
+                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-2 line-clamp-2">
+                          {project.promoAssets.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3">
-                    <div
-                      className={`h-3 rounded-full bg-gradient-to-r ${getStatusColor(project.status)} transition-all duration-500`}
-                      style={{ width: `${calculateProgress(project.raised, project.hardCap)}%` }}
-                    />
-                  </div>
-                </div>
 
-                {/* Project Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">Token Price</p>
-                    <p className="text-lg font-bold text-black dark:text-white">
-                      ${project.price}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">Investors</p>
-                    <p className="text-lg font-bold text-black dark:text-white">
-                      {project.investors}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">Start Date</p>
-                    <p className="text-sm font-semibold text-black dark:text-white">
-                      {formatDate(project.startTime)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">End Date</p>
-                    <p className="text-sm font-semibold text-black dark:text-white">
-                      {formatDate(project.endTime)}
-                    </p>
-                  </div>
-                </div>
+                  {/* Promo Assets / Social Links */}
+                  {project.promoAssets && (
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      {project.promoAssets.twitter && (
+                        <a href={`https://twitter.com/${project.promoAssets.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" 
+                           className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all cursor-pointer sound-hover">
+                          🐦 Twitter
+                        </a>
+                      )}
+                      {project.promoAssets.telegram && (
+                        <a href={`https://${project.promoAssets.telegram}`} target="_blank" rel="noopener noreferrer"
+                           className="px-2 py-1 bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 rounded text-xs hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-all cursor-pointer sound-hover">
+                          ✈️ Telegram
+                        </a>
+                      )}
+                      {project.promoAssets.website && (
+                        <a href={`https://${project.promoAssets.website}`} target="_blank" rel="noopener noreferrer"
+                           className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded text-xs hover:bg-green-200 dark:hover:bg-green-900/50 transition-all cursor-pointer sound-hover">
+                          🌐 Website
+                        </a>
+                      )}
+                      {project.promoAssets.discord && (
+                        <a href={`https://${project.promoAssets.discord}`} target="_blank" rel="noopener noreferrer"
+                           className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded text-xs hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-all cursor-pointer sound-hover">
+                          💬 Discord
+                        </a>
+                      )}
+                    </div>
+                  )}
 
-                {/* Investment Section */}
-                {project.status === 'active' && publicKey && (
-                  <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
-                    {selectedProject === project.id ? (
-                      <div className="space-y-3">
-                        <input
-                          type="number"
-                          value={investmentAmount}
-                          onChange={(e) => setInvestmentAmount(e.target.value)}
-                          placeholder="Enter amount (SOL)"
-                          className="w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleInvest(project.symbol)}
-                            disabled={isInvesting || !investmentAmount}
-                            className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-                          >
-                            {isInvesting ? 'Investing...' : 'Confirm'}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedProject(null);
-                              setInvestmentAmount('');
-                            }}
-                            className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white rounded-lg font-semibold hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all duration-300"
-                          >
-                            Cancel
-                          </button>
+                  {/* Bonding Curve Info */}
+                  {project.bondingCurve && project.status === 'active' && (
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-3 mb-4 border border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">📈 Bonding Curve</span>
+                        <span className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded-full">
+                          {project.bondingCurve.curveType}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <p className="text-zinc-600 dark:text-zinc-400">Initial</p>
+                          <p className="font-bold text-purple-700 dark:text-purple-300">${project.bondingCurve.initialPrice}</p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-600 dark:text-zinc-400">Current</p>
+                          <p className="font-bold text-purple-700 dark:text-purple-300">${project.price.toFixed(4)}</p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-600 dark:text-zinc-400">Target</p>
+                          <p className="font-bold text-purple-700 dark:text-purple-300">${project.bondingCurve.targetPrice}</p>
                         </div>
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => setSelectedProject(project.id)}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
-                      >
-                        Invest Now
-                      </button>
-                    )}
+                    </div>
+                  )}
+
+                  {/* Market Stats */}
+                  {project.marketCap !== undefined && project.liquidity !== undefined && (
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-3">
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400">Market Cap</p>
+                        <p className="text-sm font-bold text-black dark:text-white">
+                          ${(project.marketCap / 1000000).toFixed(2)}M
+                        </p>
+                      </div>
+                      <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-3">
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400">Liquidity</p>
+                        <p className="text-sm font-bold text-black dark:text-white">
+                          ${project.liquidity.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Progress Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-zinc-600 dark:text-zinc-400">Progress</span>
+                      <span className="font-semibold text-black dark:text-white">
+                        ${project.raised.toLocaleString()} / ${project.hardCap.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-3 overflow-hidden">
+                      <div
+                        className={`h-3 rounded-full bg-gradient-to-r ${getStatusColor(project.status)} transition-all duration-500 animate-gradient`}
+                        style={{ width: `${calculateProgress(project.raised, project.hardCap)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs mt-1 text-zinc-500 dark:text-zinc-500">
+                      <span>{calculateProgress(project.raised, project.hardCap).toFixed(1)}% raised</span>
+                      <span>{project.investors} investors</span>
+                    </div>
                   </div>
-                )}
+
+                  {/* Project Stats */}
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">Token Price</p>
+                      <p className="text-lg font-bold text-black dark:text-white">
+                        ${project.price.toFixed(4)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">Total Supply</p>
+                      <p className="text-lg font-bold text-black dark:text-white">
+                        {(project.totalSupply / 1000000).toFixed(0)}M
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">Start Date</p>
+                      <p className="text-sm font-semibold text-black dark:text-white">
+                        {formatDate(project.startTime)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">End Date</p>
+                      <p className="text-sm font-semibold text-black dark:text-white">
+                        {formatDate(project.endTime)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Investment Section */}
+                  {project.status === 'active' && publicKey && (
+                    <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
+                      {selectedProject === project.id ? (
+                        <div className="space-y-3">
+                          <input
+                            type="number"
+                            value={investmentAmount}
+                            onChange={(e) => setInvestmentAmount(e.target.value)}
+                            placeholder="Enter amount (SOL)"
+                            className="w-full px-4 py-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-black dark:text-white sound-hover"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                handleInvest(project.symbol);
+                                soundUtils.playSuccess();
+                              }}
+                              disabled={isInvesting || !investmentAmount}
+                              className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 button-press magnetic-button sound-click"
+                            >
+                              {isInvesting ? 'Investing...' : 'Confirm Investment'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedProject(null);
+                                setInvestmentAmount('');
+                              }}
+                              className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white rounded-lg font-semibold hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all duration-300 sound-click"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setSelectedProject(project.id)}
+                          className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 magnetic-button button-press sound-click"
+                        >
+                          💰 Invest Now
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

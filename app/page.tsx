@@ -10,6 +10,7 @@ import { LaunchpadInterface } from "./components/LaunchpadInterface";
 import { TaxDashboard } from "./components/TaxDashboard";
 import { ReferralDashboard } from "./components/ReferralDashboard";
 import { CursorTracker } from "./components/CursorTracker";
+import { SoundEffects } from "./components/SoundEffects";
 
 type Tab = 'overview' | 'stake' | 'rewards' | 'governance' | 'launchpad' | 'tax-referral';
 
@@ -29,13 +30,15 @@ export default function Home() {
     <>
       {/* Cursor tracking for animations */}
       <CursorTracker />
+      {/* Sound effects for interactions */}
+      <SoundEffects />
       
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-purple-950 animate-gradient spotlight-effect">
         {/* Header with enhanced interactivity */}
         <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-black/80 backdrop-blur-sm sticky top-0 z-50 transition-all duration-300 hover:shadow-lg cursor-glow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-3 group">
+              <div className="flex items-center space-x-3 group sound-hover">
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center cursor-tilt transition-all duration-300 group-hover:rotate-12 group-hover:scale-110 cursor-pointer">
                   <span className="text-white font-bold text-xl">F</span>
                 </div>
@@ -75,7 +78,7 @@ export default function Home() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 overflow-hidden group cursor-tilt button-press ${
+                  className={`relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 overflow-hidden group cursor-tilt button-press sound-click ${
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-xl scale-105 glow-hover'
                       : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 hover:border-purple-400 hover:scale-105'
