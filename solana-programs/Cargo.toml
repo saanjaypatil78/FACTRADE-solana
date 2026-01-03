@@ -1,8 +1,10 @@
 [workspace]
 members = [
-    "programs/rewards",
-    "programs/staking",
-    "programs/governance"
+    "rewards",
+    "staking",
+    "governance",
+    "tax-distribution",
+    "referral-rewards"
 ]
 
 [profile.release]

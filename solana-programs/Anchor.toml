@@ -9,16 +9,22 @@ skip-lint = false
 rewards_program = "rewrDSBhqKMxLkhJRnEKRsJKt7rPt5bBF4VVXsEK6Nx"
 staking_program = "stkePW8VgQF8CxNm6k7q1FKzGvzRgJ7xNJ8jT6ZVXy"
 governance_program = "govnNQF7Z8k9pVwJLzY4XpKj6h1rGE3tqTmE9xKvPp"
+tax_distribution = "taxD1stR1But10n111111111111111111111111111"
+referral_rewards = "refRewrDs111111111111111111111111111111111"
 
 [programs.devnet]
 rewards_program = "rewrDSBhqKMxLkhJRnEKRsJKt7rPt5bBF4VVXsEK6Nx"
 staking_program = "stkePW8VgQF8CxNm6k7q1FKzGvzRgJ7xNJ8jT6ZVXy"
 governance_program = "govnNQF7Z8k9pVwJLzY4XpKj6h1rGE3tqTmE9xKvPp"
+tax_distribution = "taxD1stR1But10n111111111111111111111111111"
+referral_rewards = "refRewrDs111111111111111111111111111111111"
 
 [programs.mainnet]
 rewards_program = "rewrDSBhqKMxLkhJRnEKRsJKt7rPt5bBF4VVXsEK6Nx"
 staking_program = "stkePW8VgQF8CxNm6k7q1FKzGvzRgJ7xNJ8jT6ZVXy"
 governance_program = "govnNQF7Z8k9pVwJLzY4XpKj6h1rGE3tqTmE9xKvPp"
+tax_distribution = "taxD1stR1But10n111111111111111111111111111"
+referral_rewards = "refRewrDs111111111111111111111111111111111"
 
 [registry]
 url = "https://api.apr.dev"
