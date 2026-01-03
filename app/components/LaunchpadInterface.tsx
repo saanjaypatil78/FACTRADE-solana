@@ -256,14 +256,22 @@ export function LaunchpadInterface() {
   );
 
   const handleCreateProject = async () => {
-    if (!publicKey || !connection) {
-      alert('Please connect your wallet');
+    if (!publicKey) {
+      soundUtils.playError();
+      alert('❌ Please connect your wallet first!\n\nClick "Select Wallet" in the top right to connect.');
+      return;
+    }
+
+    if (!connection) {
+      soundUtils.playError();
+      alert('❌ No connection to Solana network!\n\nPlease check your internet connection.');
       return;
     }
 
     // Validate form
     if (!newProject.name || !newProject.symbol || !newProject.totalSupply) {
-      alert('Please fill in all required fields');
+      soundUtils.playError();
+      alert('❌ Please fill in all required fields!\n\nName, Symbol, and Total Supply are required.');
       return;
     }
 
@@ -289,7 +297,8 @@ export function LaunchpadInterface() {
       const signature = await sendTransaction(transaction, connection);
       await connection.confirmTransaction(signature, 'confirmed');
 
-      alert('Project created successfully!');
+      soundUtils.playSuccess();
+      alert(`✅ Project created successfully!\n\nYour ${newProject.symbol} project is now live on the launchpad!\n\nTransaction: ${signature.substring(0, 8)}...`);
       
       // Reset form
       setNewProject({
@@ -303,17 +312,41 @@ export function LaunchpadInterface() {
         endTime: 0,
       });
       setActiveView('browse');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Project creation error:', error);
-      alert('Failed to create project. Please try again.');
+      soundUtils.playError();
+      
+      // Provide specific error messages
+      if (error.message?.includes('User rejected')) {
+        alert('❌ Transaction cancelled\n\nYou rejected the transaction in your wallet.');
+      } else if (error.message?.includes('failed to get info about account')) {
+        alert('⚠️ Launchpad program not deployed yet!\n\nThe launchpad smart contract is not yet deployed to Solana.\n\nThis is a demo with placeholder program IDs.\n\nTo create real projects, deploy the program first and update the program IDs.');
+      } else if (error.message?.includes('insufficient funds')) {
+        alert('❌ Insufficient funds\n\nYou don\'t have enough SOL in your wallet to pay for the transaction fee.');
+      } else {
+        alert(`❌ Failed to create project\n\n${error.message || 'Unknown error. Please try again.'}`);
+      }
     } finally {
       setIsCreating(false);
     }
   };
 
   const handleInvest = async (projectSymbol: string) => {
-    if (!publicKey || !connection || !investmentAmount) {
-      alert('Please connect wallet and enter amount');
+    if (!publicKey) {
+      soundUtils.playError();
+      alert('❌ Please connect your wallet first!\n\nClick "Select Wallet" in the top right to connect.');
+      return;
+    }
+
+    if (!connection) {
+      soundUtils.playError();
+      alert('❌ No connection to Solana network!\n\nPlease check your internet connection.');
+      return;
+    }
+
+    if (!investmentAmount || parseFloat(investmentAmount) <= 0) {
+      soundUtils.playError();
+      alert('❌ Please enter a valid investment amount!');
       return;
     }
 
@@ -329,12 +362,24 @@ export function LaunchpadInterface() {
       const signature = await sendTransaction(transaction, connection);
       await connection.confirmTransaction(signature, 'confirmed');
 
-      alert('Investment successful!');
+      soundUtils.playSuccess();
+      alert(`✅ Investment successful!\n\nYou invested ${investmentAmount} SOL in ${projectSymbol}.\n\nTransaction: ${signature.substring(0, 8)}...`);
       setInvestmentAmount('');
       setSelectedProject(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Investment error:', error);
-      alert('Investment failed. Please try again.');
+      soundUtils.playError();
+      
+      // Provide specific error messages
+      if (error.message?.includes('User rejected')) {
+        alert('❌ Transaction cancelled\n\nYou rejected the transaction in your wallet.');
+      } else if (error.message?.includes('failed to get info about account')) {
+        alert('⚠️ Launchpad program not deployed yet!\n\nThe launchpad smart contract is not yet deployed to Solana.\n\nThis is a demo with placeholder program IDs.\n\nTo use real investments, deploy the program first and update the program IDs.');
+      } else if (error.message?.includes('insufficient funds')) {
+        alert('❌ Insufficient funds\n\nYou don\'t have enough SOL in your wallet for this investment.');
+      } else {
+        alert(`❌ Investment failed\n\n${error.message || 'Unknown error. Please try again.'}`);
+      }
     } finally {
       setIsInvesting(false);
     }
@@ -367,6 +412,25 @@ export function LaunchpadInterface() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
+      {/* Demo Notice Banner */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-4 border-2 border-amber-200 dark:border-amber-800">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">ℹ️</span>
+          <div>
+            <h3 className="font-bold text-amber-800 dark:text-amber-200 mb-1">
+              Demo Mode - Programs Not Deployed
+            </h3>
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              This is a frontend demo with placeholder program IDs. Investment transactions will fail until the Solana programs are deployed. 
+              The UI shows simulated data with bonding curves, promo assets, and auto-updating statistics.
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+              💡 To make this functional: Deploy the launchpad program to Solana and update PROGRAM_IDS in <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">program-integration.ts</code>
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Launchpad Header */}
       <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-8 border border-indigo-200 dark:border-indigo-800">
         <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
