@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SolanaProvider } from "./components/SolanaProvider";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
         <SolanaProvider>
           {children}
         </SolanaProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
